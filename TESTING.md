@@ -40,10 +40,10 @@ gradlew.bat runClient -PvisualTests -PcompatVisual -Pcompat --offline
 - `pan`, `roaster-plating`, `roaster-world` — сковородка и жаровня;
 - `candlelight-empty-floor`, `candlelight-world-floor` — открытый котёл без крышки, видимое дно и ложка;
 - `soup-without-stirring-world` — жидкость в мире до перемешивания;
-- `bakery-jam` — варенье;
+- `bakery-jam` — варенье с восточной стороны: камера и книга повёрнуты к игроку, котёл остаётся на месте;
 - `mincer-world` — штатная модель мясорубки в сцене.
 
-Клиентский запуск завершился с `BUILD SUCCESSFUL`; все проверки `HANDILY_CHECK ... PASS` присутствуют в `handily-051-client2.log`.
+Клиентский запуск завершился с `BUILD SUCCESSFUL`; все проверки `HANDILY_CHECK ... PASS` присутствуют в `handily-051-client3.log`.
 
 ## Границы проверки
 

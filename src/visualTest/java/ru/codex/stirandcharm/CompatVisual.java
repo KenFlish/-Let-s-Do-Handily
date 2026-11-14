@@ -79,7 +79,7 @@ public final class CompatVisual {
         if(ticks==525){if(DiegesisClient.isFocused())throw new IllegalStateException("World view remained focused");shot(mc,"roaster-world");}
         if(ticks==540)mc.getSingleplayerServer().execute(()->mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst().connection.teleport(6.5,70,-1.5,0,50));
         if(ticks==575)shot(mc,"soup-without-stirring-world");
-        if(ticks==590)mc.getSingleplayerServer().execute(()->mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst().connection.teleport(-3.5,70,-2,0,45));
+        if(ticks==590)mc.getSingleplayerServer().execute(()->mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst().connection.teleport(-1.2,70,.2,90,45));
         if(ticks==625)open(mc,4);
         if(ticks==680)shot(mc,"bakery-jam");
         if(ticks==700)com.pockyl.diegesis.impl.client.focus.FocusController.get().requestExit();
