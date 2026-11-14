@@ -1,0 +1,282 @@
+{
+  "work_plane": 14,
+  "idle_visible": false,
+  "camera": {
+    "position": [
+      8,
+      41,
+      -21
+    ],
+    "target": [
+      8,
+      6.5,
+      8
+    ],
+    "fov": 30,
+    "neighbors": {
+      "enabled": false
+    }
+  },
+  "interface": {
+    "hide_player": true,
+    "inventory_panel": false,
+    "outline_color": "#FFFFE8C0",
+    "shadows": false,
+    "carry_lift": 4,
+    "carry_stick": false
+  },
+  "inventory_drawer": {
+    "side": "bottom",
+    "style": "minimal",
+    "always_open": true,
+    "compact": true,
+    "background": "#00000000",
+    "slot_color": "#8C1E140C"
+  },
+  "nodes": [
+    {
+      "id": "containers",
+      "pos": [
+        -3,
+        4,
+        8
+      ],
+      "slot": {
+        "slot": "containers[0]",
+        "size": 3.5
+      },
+      "tooltip": "handson_farm_charm.containers"
+    },
+    {
+      "id": "ingredient_0",
+      "pos": [
+        4.5,
+        3.2,
+        6
+      ],
+      "collider": {
+        "from": [
+          -1.5,
+          0,
+          -1.5
+        ],
+        "to": [
+          1.5,
+          1,
+          1.5
+        ]
+      },
+      "slot": {
+        "slot": "ingredients[0]",
+        "size": 3,
+        "item_size": 2.6,
+        "display": "flat",
+        "counts": "hover"
+      }
+    },
+    {
+      "id": "ingredient_1",
+      "pos": [
+        8.0,
+        3.2,
+        6
+      ],
+      "collider": {
+        "from": [
+          -1.5,
+          0,
+          -1.5
+        ],
+        "to": [
+          1.5,
+          1,
+          1.5
+        ]
+      },
+      "slot": {
+        "slot": "ingredients[1]",
+        "size": 3,
+        "item_size": 2.6,
+        "display": "flat",
+        "counts": "hover"
+      }
+    },
+    {
+      "id": "ingredient_2",
+      "pos": [
+        11.5,
+        3.2,
+        6
+      ],
+      "collider": {
+        "from": [
+          -1.5,
+          0,
+          -1.5
+        ],
+        "to": [
+          1.5,
+          1,
+          1.5
+        ]
+      },
+      "slot": {
+        "slot": "ingredients[2]",
+        "size": 3,
+        "item_size": 2.6,
+        "display": "flat",
+        "counts": "hover"
+      }
+    },
+    {
+      "id": "ingredient_3",
+      "pos": [
+        4.5,
+        3.2,
+        10
+      ],
+      "collider": {
+        "from": [
+          -1.5,
+          0,
+          -1.5
+        ],
+        "to": [
+          1.5,
+          1,
+          1.5
+        ]
+      },
+      "slot": {
+        "slot": "ingredients[3]",
+        "size": 3,
+        "item_size": 2.6,
+        "display": "flat",
+        "counts": "hover"
+      }
+    },
+    {
+      "id": "ingredient_4",
+      "pos": [
+        8.0,
+        3.2,
+        10
+      ],
+      "collider": {
+        "from": [
+          -1.5,
+          0,
+          -1.5
+        ],
+        "to": [
+          1.5,
+          1,
+          1.5
+        ]
+      },
+      "slot": {
+        "slot": "ingredients[4]",
+        "size": 3,
+        "item_size": 2.6,
+        "display": "flat",
+        "counts": "hover"
+      }
+    },
+    {
+      "id": "ingredient_5",
+      "pos": [
+        11.5,
+        3.2,
+        10
+      ],
+      "collider": {
+        "from": [
+          -1.5,
+          0,
+          -1.5
+        ],
+        "to": [
+          1.5,
+          1,
+          1.5
+        ]
+      },
+      "slot": {
+        "slot": "ingredients[5]",
+        "size": 3,
+        "item_size": 2.6,
+        "display": "flat",
+        "counts": "hover"
+      }
+    },
+    {
+      "id": "mouth",
+      "drop_zone": "ingredients",
+      "collider": {
+        "from": [
+          3,
+          2.2,
+          3
+        ],
+        "to": [
+          13,
+          3,
+          13
+        ]
+      }
+    },
+    {
+      "id": "result",
+      "pos": [
+        -1,
+        16,
+        -1
+      ],
+      "rotation": [
+        -50,
+        0,
+        0
+      ],
+      "tooltip": "handson_farm_charm.result",
+      "collider": {
+        "from": [
+          -2.3,
+          -0.5,
+          -2.3
+        ],
+        "to": [
+          2.3,
+          0.7,
+          2.3
+        ]
+      }
+    },
+    {
+      "id": "book_open",
+      "pos": [
+        16.33,
+        21.22,
+        -4
+      ],
+      "rotation": [
+        -50,
+        0,
+        0
+      ],
+      "scale": 0.69,
+      "hidden": true,
+      "collider": {
+        "from": [
+          -4.4,
+          -0.4,
+          -3.9
+        ],
+        "to": [
+          4.4,
+          1.4,
+          3.9
+        ]
+      }
+    }
+  ]
+}

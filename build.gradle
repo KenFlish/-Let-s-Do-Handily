@@ -1,0 +1,58 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.141'
+}
+version = '0.4.0'
+group = 'ru.codex.stirandcharm'
+base { archivesName = 'handily-neoforge-1.21.1' }
+java { toolchain.languageVersion = JavaLanguageVersion.of(21); withSourcesJar() }
+sourceSets {
+    gameTest {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
+    visualTest {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
+}
+if (!project.hasProperty('legacyTests')) sourceSets.gameTest.java.exclude('**/KitchenGameTests.java')
+neoForge {
+    version = '21.1.265'
+    runs {
+        client {
+            client(); gameDirectory = file('run-client')
+            if (project.hasProperty('compatVisual')) systemProperty 'handily.compatVisual', 'true'
+            if (project.hasProperty('visualTests')) {
+                programArguments.addAll('--quickPlaySingleplayer', 'Showcase', '--width', '1280', '--height', '800')
+            }
+        }
+        server { server(); gameDirectory = file('run-server'); programArgument '--nogui' }
+        gameTestServer {
+            type = 'gameTestServer'
+            gameDirectory = file('run-tests')
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'handson_farm_charm'
+        }
+    }
+    mods { handson_farm_charm {
+        sourceSet sourceSets.main
+        if (project.hasProperty('gameTests')) sourceSet sourceSets.gameTest
+        if (project.hasProperty('visualTests')) sourceSet sourceSets.visualTest
+    } }
+}
+neoForge.addModdingDependenciesTo(sourceSets.gameTest)
+neoForge.addModdingDependenciesTo(sourceSets.visualTest)
+dependencies {
+    implementation files('libs/diegesis-neoforge-1.21.1-1.0.0-beta.8.jar')
+    implementation files('libs/letsdo-farm_and_charm-neoforge-1.1.29.jar')
+    implementation files('libs/architectury-13.0.11-neoforge.jar')
+    compileOnly files('libs/foundation-neoforge-1.0.7.jar')
+    testImplementation files('libs/foundation-neoforge-1.0.7.jar')
+    gameTestImplementation files('libs/foundation-neoforge-1.0.7.jar')
+    visualTestImplementation files('libs/foundation-neoforge-1.0.7.jar')
+    if (project.hasProperty('compat')) runtimeOnly fileTree(dir: 'libs/compat', include: '*.jar')
+}
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+tasks.named('processResources') { inputs.property('version', project.version); filesMatching('META-INF/neoforge.mods.toml') { expand(version: project.version) } }
+tasks.named('jar') { from('LICENSE'); from('LICENSE_HANDSON_DELIGHT'); from('THIRD_PARTY_NOTICES.md') }
+tasks.named('sourcesJar') { from('LICENSE'); from('LICENSE_HANDSON_DELIGHT'); from('THIRD_PARTY_NOTICES.md') }

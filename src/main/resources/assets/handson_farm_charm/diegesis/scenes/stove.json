@@ -1,0 +1,229 @@
+{
+  "work_plane": 18,
+  "idle_visible": false,
+  "camera": {
+    "position": [
+      8,
+      11,
+      -31
+    ],
+    "target": [
+      8,
+      8,
+      7
+    ],
+    "fov": 37,
+    "neighbors": {
+      "enabled": false
+    }
+  },
+  "interface": {
+    "hide_player": true,
+    "inventory_panel": false,
+    "outline_color": "#FFFFE8C0",
+    "shadows": false,
+    "carry_lift": 4,
+    "carry_stick": false
+  },
+  "inventory_drawer": {
+    "side": "bottom",
+    "style": "minimal",
+    "always_open": true,
+    "compact": true,
+    "background": "#00000000",
+    "slot_color": "#8C1E140C"
+  },
+  "nodes": [
+    {
+      "id": "fuel",
+      "pos": [
+        8,
+        3,
+        -1
+      ],
+      "rotation": [
+        -90,
+        0,
+        0
+      ],
+      "slot": {
+        "slot": "fuel[0]",
+        "size": 3.5
+      },
+      "tooltip": "handson_farm_charm.fuel"
+    },
+    {
+      "id": "fire",
+      "pos": [
+        15,
+        3,
+        -1
+      ],
+      "scale": 0.18,
+      "visual": {
+        "item": "minecraft:flint_and_steel",
+        "anchor": [
+          8,
+          8,
+          8
+        ]
+      },
+      "collider": {
+        "from": [
+          -8,
+          -8,
+          -8
+        ],
+        "to": [
+          8,
+          8,
+          8
+        ]
+      },
+      "tooltip": "handson_farm_charm.fire"
+    },
+    {
+      "id": "ingredient_0",
+      "pos": [
+        4.5,
+        10.5,
+        -0.6
+      ],
+      "collider": {
+        "from": [
+          -1.5,
+          0,
+          -1.5
+        ],
+        "to": [
+          1.5,
+          1,
+          1.5
+        ]
+      },
+      "slot": {
+        "slot": "ingredients[0]",
+        "size": 3,
+        "item_size": 2.6,
+        "display": "flat",
+        "counts": "hover"
+      },
+      "rotation": [
+        -90,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "ingredient_1",
+      "pos": [
+        8,
+        10.5,
+        -0.6
+      ],
+      "collider": {
+        "from": [
+          -1.5,
+          0,
+          -1.5
+        ],
+        "to": [
+          1.5,
+          1,
+          1.5
+        ]
+      },
+      "slot": {
+        "slot": "ingredients[1]",
+        "size": 3,
+        "item_size": 2.6,
+        "display": "flat",
+        "counts": "hover"
+      },
+      "rotation": [
+        -90,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "ingredient_2",
+      "pos": [
+        11.5,
+        10.5,
+        -0.6
+      ],
+      "collider": {
+        "from": [
+          -1.5,
+          0,
+          -1.5
+        ],
+        "to": [
+          1.5,
+          1,
+          1.5
+        ]
+      },
+      "slot": {
+        "slot": "ingredients[2]",
+        "size": 3,
+        "item_size": 2.6,
+        "display": "flat",
+        "counts": "hover"
+      },
+      "rotation": [
+        -90,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "result",
+      "pos": [
+        -5,
+        11,
+        -3
+      ],
+      "rotation": [
+        -85,
+        0,
+        0
+      ],
+      "tooltip": "handson_farm_charm.result",
+      "slot": {
+        "slot": "result[0]",
+        "size": 4,
+        "display": "hidden",
+        "highlight": false
+      }
+    },
+    {
+      "id": "book_open",
+      "pos": [
+        21,
+        11,
+        -4
+      ],
+      "rotation": [
+        -85,
+        0,
+        0
+      ],
+      "scale": 0.69,
+      "hidden": true,
+      "collider": {
+        "from": [
+          -4.4,
+          -0.4,
+          -3.9
+        ],
+        "to": [
+          4.4,
+          1.4,
+          3.9
+        ]
+      }
+    }
+  ]
+}

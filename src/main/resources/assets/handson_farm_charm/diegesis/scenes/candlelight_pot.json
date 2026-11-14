@@ -1,0 +1,340 @@
+{
+  "work_plane": 14,
+  "idle_visible": false,
+  "camera": {
+    "position": [
+      8,
+      41,
+      -21
+    ],
+    "target": [
+      8,
+      6.5,
+      8
+    ],
+    "fov": 30,
+    "neighbors": {
+      "enabled": false
+    }
+  },
+  "interface": {
+    "hide_player": true,
+    "inventory_panel": false,
+    "outline_color": "#FFFFE8C0",
+    "shadows": false,
+    "carry_lift": 4,
+    "carry_stick": false
+  },
+  "inventory_drawer": {
+    "side": "bottom",
+    "style": "minimal",
+    "always_open": true,
+    "compact": true,
+    "background": "#00000000",
+    "slot_color": "#8C1E140C"
+  },
+  "nodes": [
+    {
+      "id": "pot_body",
+      "pickable": false
+    },
+    {
+      "id": "broth",
+      "pickable": false,
+      "tank": {
+        "tank": "broth",
+        "inner": {
+          "from": [
+            4,
+            2,
+            4
+          ],
+          "to": [
+            12,
+            11,
+            12
+          ]
+        }
+      }
+    },
+    {
+      "id": "spoon",
+      "pos": [
+        8,
+        0,
+        8
+      ],
+      "pickable": false,
+      "children": [
+        {
+          "id": "stir_handle",
+          "strokes": true,
+          "collider": {
+            "from": [
+              -8.5,
+              10.5,
+              -1
+            ],
+            "to": [
+              -2.5,
+              16,
+              3
+            ]
+          },
+          "tooltip": "handson_farm_charm.stir"
+        }
+      ]
+    },
+    {
+      "id": "mouth",
+      "drop_zone": "ingredients",
+      "collider": {
+        "from": [
+          4,
+          11,
+          4
+        ],
+        "to": [
+          12,
+          12,
+          12
+        ]
+      }
+    },
+    {
+      "id": "ingredient_0",
+      "pos": [
+        5.2,
+        10.7,
+        5.2
+      ],
+      "collider": {
+        "from": [
+          -1.2,
+          0,
+          -1.2
+        ],
+        "to": [
+          1.2,
+          0.7,
+          1.2
+        ]
+      },
+      "slot": {
+        "slot": "ingredients[0]",
+        "size": 2.4,
+        "item_size": 2.2,
+        "display": "flat",
+        "counts": "hover",
+        "highlight": false
+      }
+    },
+    {
+      "id": "ingredient_1",
+      "pos": [
+        8,
+        10.7,
+        4.7
+      ],
+      "collider": {
+        "from": [
+          -1.2,
+          0,
+          -1.2
+        ],
+        "to": [
+          1.2,
+          0.7,
+          1.2
+        ]
+      },
+      "slot": {
+        "slot": "ingredients[1]",
+        "size": 2.4,
+        "item_size": 2.2,
+        "display": "flat",
+        "counts": "hover",
+        "highlight": false
+      }
+    },
+    {
+      "id": "ingredient_2",
+      "pos": [
+        10.8,
+        10.7,
+        5.2
+      ],
+      "collider": {
+        "from": [
+          -1.2,
+          0,
+          -1.2
+        ],
+        "to": [
+          1.2,
+          0.7,
+          1.2
+        ]
+      },
+      "slot": {
+        "slot": "ingredients[2]",
+        "size": 2.4,
+        "item_size": 2.2,
+        "display": "flat",
+        "counts": "hover",
+        "highlight": false
+      }
+    },
+    {
+      "id": "ingredient_3",
+      "pos": [
+        5.2,
+        10.7,
+        10.8
+      ],
+      "collider": {
+        "from": [
+          -1.2,
+          0,
+          -1.2
+        ],
+        "to": [
+          1.2,
+          0.7,
+          1.2
+        ]
+      },
+      "slot": {
+        "slot": "ingredients[3]",
+        "size": 2.4,
+        "item_size": 2.2,
+        "display": "flat",
+        "counts": "hover",
+        "highlight": false
+      }
+    },
+    {
+      "id": "ingredient_4",
+      "pos": [
+        8,
+        10.7,
+        11.3
+      ],
+      "collider": {
+        "from": [
+          -1.2,
+          0,
+          -1.2
+        ],
+        "to": [
+          1.2,
+          0.7,
+          1.2
+        ]
+      },
+      "slot": {
+        "slot": "ingredients[4]",
+        "size": 2.4,
+        "item_size": 2.2,
+        "display": "flat",
+        "counts": "hover",
+        "highlight": false
+      }
+    },
+    {
+      "id": "ingredient_5",
+      "pos": [
+        10.8,
+        10.7,
+        10.8
+      ],
+      "collider": {
+        "from": [
+          -1.2,
+          0,
+          -1.2
+        ],
+        "to": [
+          1.2,
+          0.7,
+          1.2
+        ]
+      },
+      "slot": {
+        "slot": "ingredients[5]",
+        "size": 2.4,
+        "item_size": 2.2,
+        "display": "flat",
+        "counts": "hover",
+        "highlight": false
+      }
+    },
+    {
+      "id": "result",
+      "pos": [
+        -1,
+        16,
+        -1
+      ],
+      "rotation": [
+        -50,
+        0,
+        0
+      ],
+      "tooltip": "handson_farm_charm.result",
+      "collider": {
+        "from": [
+          -2.3,
+          -0.5,
+          -2.3
+        ],
+        "to": [
+          2.3,
+          0.7,
+          2.3
+        ]
+      }
+    },
+    {
+      "id": "containers",
+      "pos": [
+        -3,
+        3,
+        8
+      ],
+      "slot": {
+        "slot": "containers[0]",
+        "size": 3,
+        "highlight": false
+      },
+      "tooltip": "handson_farm_charm.containers"
+    },
+    {
+      "id": "book_open",
+      "pos": [
+        16.33,
+        21.22,
+        -4
+      ],
+      "rotation": [
+        -50,
+        0,
+        0
+      ],
+      "scale": 0.69,
+      "hidden": true,
+      "collider": {
+        "from": [
+          -4.4,
+          -0.4,
+          -3.9
+        ],
+        "to": [
+          4.4,
+          1.4,
+          3.9
+        ]
+      }
+    }
+  ]
+}

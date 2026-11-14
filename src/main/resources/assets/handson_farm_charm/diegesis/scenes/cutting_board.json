@@ -1,0 +1,400 @@
+{
+  "work_plane": 4,
+  "idle_visible": false,
+  "camera": {
+    "position": [
+      8,
+      35.5,
+      -21
+    ],
+    "target": [
+      8,
+      1,
+      8
+    ],
+    "fov": 30,
+    "neighbors": {
+      "enabled": false
+    }
+  },
+  "interface": {
+    "hide_player": true,
+    "inventory_panel": false,
+    "outline_color": "#FFFFE8C0",
+    "shadows": false,
+    "carry_lift": 4,
+    "carry_stick": false
+  },
+  "inventory_drawer": {
+    "side": "bottom",
+    "style": "minimal",
+    "always_open": true,
+    "compact": true,
+    "background": "#00000000",
+    "slot_color": "#8C1E140C"
+  },
+  "nodes": [
+    {
+      "id": "book_open",
+      "pos": [
+        15.5,
+        15.72,
+        -4
+      ],
+      "rotation": [
+        -50,
+        0,
+        0
+      ],
+      "scale": 0.69,
+      "hidden": true,
+      "collider": {
+        "from": [
+          -4.4,
+          -0.4,
+          -3.9
+        ],
+        "to": [
+          4.4,
+          1.4,
+          3.9
+        ]
+      }
+    },
+    {
+      "id": "knife",
+      "pos": [
+        -3,
+        3,
+        7
+      ],
+      "slot": {
+        "slot": "knife[0]",
+        "size": 3.5
+      },
+      "tooltip": "handson_farm_charm.board.knife"
+    },
+    {
+      "id": "pending",
+      "drop_zone": "pending",
+      "collider": {
+        "from": [
+          1,
+          0,
+          3
+        ],
+        "to": [
+          11,
+          5.2,
+          13
+        ]
+      }
+    },
+    {
+      "id": "surface",
+      "collider": {
+        "from": [
+          1,
+          0,
+          3
+        ],
+        "to": [
+          11,
+          5,
+          13
+        ]
+      },
+      "tooltip": "handson_farm_charm.board.surface"
+    },
+    {
+      "id": "food",
+      "pos": [
+        6,
+        1.05,
+        8
+      ],
+      "pickable": false
+    },
+    {
+      "id": "marks",
+      "pos": [
+        6,
+        1.05,
+        8
+      ],
+      "pickable": false
+    },
+    {
+      "id": "knife_turn",
+      "pos": [
+        6,
+        1,
+        8
+      ],
+      "pickable": false,
+      "children": [
+        {
+          "id": "knife_model",
+          "rotation": [
+            20,
+            0,
+            -135
+          ],
+          "scale": 0.45,
+          "pickable": false
+        }
+      ]
+    },
+    {
+      "id": "mouth",
+      "drop_zone": "ingredients",
+      "collider": {
+        "from": [
+          1,
+          0.6,
+          3
+        ],
+        "to": [
+          11,
+          1,
+          13
+        ]
+      }
+    },
+    {
+      "id": "assemble",
+      "pos": [
+        6,
+        3,
+        15
+      ],
+      "scale": 0.2,
+      "visual": {
+        "item": "minecraft:crafting_table",
+        "anchor": [
+          8,
+          8,
+          8
+        ]
+      },
+      "collider": {
+        "from": [
+          -8,
+          -8,
+          -8
+        ],
+        "to": [
+          8,
+          8,
+          8
+        ]
+      },
+      "tooltip": "handson_farm_charm.board.assemble"
+    },
+    {
+      "id": "layer_0",
+      "pos": [
+        6,
+        1.12,
+        8
+      ],
+      "pickable": false
+    },
+    {
+      "id": "layer_1",
+      "pos": [
+        6,
+        1.77,
+        8
+      ],
+      "pickable": false
+    },
+    {
+      "id": "layer_2",
+      "pos": [
+        6,
+        2.42,
+        8
+      ],
+      "pickable": false
+    },
+    {
+      "id": "layer_3",
+      "pos": [
+        6,
+        3.0700000000000003,
+        8
+      ],
+      "pickable": false
+    },
+    {
+      "id": "layer_4",
+      "pos": [
+        6,
+        3.72,
+        8
+      ],
+      "pickable": false
+    },
+    {
+      "id": "result_0",
+      "pos": [
+        -5,
+        8,
+        -2
+      ],
+      "rotation": [
+        -50,
+        0,
+        0
+      ],
+      "slot": {
+        "slot": "result[0]",
+        "size": 3.5,
+        "display": "flat",
+        "counts": "always"
+      },
+      "tooltip": "handson_farm_charm.result"
+    },
+    {
+      "id": "result_1",
+      "pos": [
+        -9,
+        8,
+        -2
+      ],
+      "rotation": [
+        -50,
+        0,
+        0
+      ],
+      "slot": {
+        "slot": "result[1]",
+        "size": 3.5,
+        "display": "flat",
+        "counts": "always"
+      },
+      "tooltip": "handson_farm_charm.result"
+    },
+    {
+      "id": "result_2",
+      "pos": [
+        -5,
+        5,
+        -2
+      ],
+      "rotation": [
+        -50,
+        0,
+        0
+      ],
+      "slot": {
+        "slot": "result[2]",
+        "size": 3.5,
+        "display": "flat",
+        "counts": "always"
+      },
+      "tooltip": "handson_farm_charm.result"
+    },
+    {
+      "id": "result_3",
+      "pos": [
+        -9,
+        5,
+        -2
+      ],
+      "rotation": [
+        -50,
+        0,
+        0
+      ],
+      "slot": {
+        "slot": "result[3]",
+        "size": 3.5,
+        "display": "flat",
+        "counts": "always"
+      },
+      "tooltip": "handson_farm_charm.result"
+    },
+    {
+      "id": "result_4",
+      "pos": [
+        -5,
+        2,
+        -2
+      ],
+      "rotation": [
+        -50,
+        0,
+        0
+      ],
+      "slot": {
+        "slot": "result[4]",
+        "size": 3.5,
+        "display": "flat",
+        "counts": "always"
+      },
+      "tooltip": "handson_farm_charm.result"
+    },
+    {
+      "id": "result_5",
+      "pos": [
+        -9,
+        2,
+        -2
+      ],
+      "rotation": [
+        -50,
+        0,
+        0
+      ],
+      "slot": {
+        "slot": "result[5]",
+        "size": 3.5,
+        "display": "flat",
+        "counts": "always"
+      },
+      "tooltip": "handson_farm_charm.result"
+    },
+    {
+      "id": "result_6",
+      "pos": [
+        -5,
+        -1,
+        -2
+      ],
+      "rotation": [
+        -50,
+        0,
+        0
+      ],
+      "slot": {
+        "slot": "result[6]",
+        "size": 3.5,
+        "display": "flat",
+        "counts": "always"
+      },
+      "tooltip": "handson_farm_charm.result"
+    },
+    {
+      "id": "result_7",
+      "pos": [
+        -9,
+        -1,
+        -2
+      ],
+      "rotation": [
+        -50,
+        0,
+        0
+      ],
+      "slot": {
+        "slot": "result[7]",
+        "size": 3.5,
+        "display": "flat",
+        "counts": "always"
+      },
+      "tooltip": "handson_farm_charm.result"
+    }
+  ]
+}
