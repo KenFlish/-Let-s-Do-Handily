@@ -225,10 +225,30 @@ final class BoardBehavior implements StationBehavior {
             display(node.get(),stack,8);
             final int index=i;
             after(.04F*i,() -> {
-                node.get().hopTo(0,0,0,finish.equals("TOSS")?2.5F:1.4F,.22F);
+                float hop=switch(finish){
+                    case "TOSS" -> 2.5F;
+                    case "SANDWICH" -> index==layers.size()-1?2.4F:1.2F;
+                    case "ROLL" -> .8F;
+                    case "SKEWER" -> 1.8F;
+                    case "KNEAD" -> .5F;
+                    case "ARRANGE" -> 1.6F;
+                    case "SHAPE" -> 1.2F;
+                    case "FREEZE" -> .3F;
+                    default -> 1.4F;
+                };
+                node.get().hopTo(0,0,0,hop,.22F);
                 if(finish.equals("TOSS"))node.get().rotateTo(25,(index%2==0?1:-1)*70,15,.22F);
+                else if(finish.equals("SANDWICH") && index==layers.size()-1)node.get().rotateTo(-18,0,0,.22F);
+                else if(finish.equals("ROLL"))node.get().rotateTo(0,index%2==0?18:-18,0,.22F);
+                else if(finish.equals("ARRANGE"))node.get().moveTo((index%2==0?-1:1)*.6F,0,(index/2%2==0?-1:1)*.5F,.22F);
+                else if(finish.equals("SHAPE"))node.get().moveTo(0,0,0,.22F);
+                else if(finish.equals("FREEZE"))node.get().setTint(0xFFDFF4FF);
+                else if(finish.equals("KNEAD"))node.get().scaleTo(.85F,.18F);
             });
-            after(.55F,() -> {node.get().scaleTo(.08F,.3F);node.get().moveTo(0,-.03F*index,0,.3F);});
+            after(.55F,() -> {
+                node.get().scaleTo(.08F,.3F);
+                node.get().moveTo(0,-.03F*index,0,.3F);
+            });
             after(.85F,()->node.get().setVisible(false));
         }
         after(.68F,() -> {
