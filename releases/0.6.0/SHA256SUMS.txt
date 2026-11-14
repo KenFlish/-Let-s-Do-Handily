@@ -1,6 +1,6 @@
-078dda80e3ad478fb946d9234146dc04b5d1c65abc6b37cb407ffd3a052ea02e  Handily-0.6.0-project.zip
-27ab261b25290b603bc93231cd166193696b3d292ad056e816e0dd48ae67004b  handily-neoforge-1.21.1-0.6.0-sources.jar
-76e880060189d039c99303a1711e183c164a3fb468ec3546e06a46aca787712d  handily-neoforge-1.21.1-0.6.0.jar
+2a1e9ad90f87e1cc1489cea84045a2f8bda65fc4e65a6140a88458f8d9676f09  Handily-0.6.0-project.zip
+18c7ffc3d221789f8e76be64072cd7e4dfbfe8f32a3bdddc64a3b56ef19c90a2  handily-neoforge-1.21.1-0.6.0-sources.jar
+d69cbec1dd3729db8443e93bbad871599f419f9c762a5bf14ed6f432d51be80f  handily-neoforge-1.21.1-0.6.0.jar
 a7e61d97e541498ce8eda4ab1e2f551a81ce49db6e66927d03c0d4d0fb6c1c6b  LICENSE
 51d76b3af1662b814b24831e9db22238cb1579eb23fa9abdeab4332b5981f32b  LICENSE_HANDSON_DELIGHT
 b8aabf16adf08daa30cfcff5ba364727b214b7b21d3f83998b4b362f93e7adf4  README.md

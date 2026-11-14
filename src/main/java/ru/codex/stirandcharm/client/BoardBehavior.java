@@ -210,6 +210,7 @@ final class BoardBehavior implements StationBehavior {
     private void after(float seconds,Runnable run){steps.add(new Step(clock+Math.max(0,seconds),run));}
     private static void display(NodeView node,ItemStack stack,float size){
         if(stack.isEmpty()){node.setVisible(false);return;}
+        node.setTint(0xFFFFFFFF);
         var icon=ItemVoxels.icon(stack);
         if(icon.isPresent()){node.scaleTo(1,0);node.moveTo(0,0,0,0);node.setShape(ItemVoxels.build(icon.get(),size,List.of(),0),icon.get().sprite(),true);}
         else {node.setVisual(Visual.ofItem(stack.getItem()).withAnchor(new Vector3f(8,8,8)));node.scaleTo(.4F,0);node.moveTo(0,3.2F,0,0);}
