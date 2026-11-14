@@ -13,8 +13,8 @@ final class JamBehavior implements StationBehavior {
     private boolean stirring,pinned;
     private ResultBadge result;
     private long start,sent=Long.MIN_VALUE;
-    public void onSceneReady(StationView view){view.node("book_open").ifPresent(n -> n.setPainter(book));result=new ResultBadge(view);view.node("result").ifPresent(n -> n.setPainter(result));}
-    public void onOpen(StationView view){view.setInventoryFilter(null);book.opened(view);}
+    public void onSceneReady(StationView view){view.node("book_open").ifPresent(n -> n.setPainter(book));result=new ResultBadge(view);view.node("result").ifPresent(n -> n.setPainter(result));ApproachCamera.open(view);}
+    public void onOpen(StationView view){view.setInventoryFilter(null);ApproachCamera.open(view);book.opened(view);}
     public void onClose(StationView view){stirring=false;pinned=false;book.shut(view);}
     public void tick(StationView view){
         long now=view.level().getGameTime();

@@ -17,7 +17,7 @@ def approach(scene):
             'target':camera['target'], 'time':.25, 'back_on_take':False, 'back_zone':0, 'hint':False})
     ui=[]
     for node in scene['nodes']:
-        if node['id'] in ('book_open','result') or node['id'].startswith('result_'):
+        if node['id'] in ('book_open','result','dump') or node['id'].startswith('result_'):
             node['pos'][0]-=8;node['pos'][2]-=8;ui.append(node)
     scene['nodes']=[n for n in scene['nodes'] if n not in ui]+[{'id':'approach_ui','pos':[8,0,8],'pickable':False,'children':ui}]
     return scene
@@ -173,7 +173,7 @@ jam['nodes']=[deepcopy(find_node(scene,'book_open'))]+[
     {'id':'dump','pos':[-3,3,8],'scale':.14,'visual':{'item':'minecraft:bucket','anchor':[8,8,8]},
         'collider':{'from':[-8,-2,-8],'to':[8,4,8]},'tooltip':'handson_farm_charm.jam.dump'}]
 jam['captions']={'edge':'top','background':'#70000000'}
-write('diegesis/scenes/jam_pot.json',jam)
+write('diegesis/scenes/jam_pot.json',approach(jam))
 en = {
     'pot_lid': 'Open / close the lid',
     'board.book_all': 'All recipes', 'board.book_tools': 'Axe work',
