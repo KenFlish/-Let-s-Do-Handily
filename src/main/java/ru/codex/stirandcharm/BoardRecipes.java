@@ -10,7 +10,17 @@ import net.satisfy.farm_and_charm.core.recipe.*;
 import net.satisfy.farm_and_charm.core.registry.RecipeTypeRegistry;
 
 public final class BoardRecipes {
-    public static List<RecipeHolder<?>> all(Level level) {
+    private static RecipeManager cachedManager;
+    private static List<RecipeHolder<?>> cached = List.of();
+    public static synchronized List<RecipeHolder<?>> all(Level level) {
+        var manager = level.getRecipeManager();
+        if (manager == cachedManager && !cached.isEmpty()) return cached;
+        var list = build(level);
+        cachedManager = manager;
+        cached = List.copyOf(list);
+        return cached;
+    }
+    private static List<RecipeHolder<?>> build(Level level) {
         var list = new ArrayList<RecipeHolder<?>>();
         list.addAll(level.getRecipeManager().getAllRecipesFor(RecipeTypeRegistry.CUTTING_BOARD_RECIPE_TYPE.get()));
         list.addAll(level.getRecipeManager().getAllRecipesFor(RecipeTypeRegistry.CUTTING_BOARD_ASSEMBLY_RECIPE_TYPE.get()));

@@ -25,7 +25,7 @@ public final class WorldIngredients {
             public void render(CookingPotBlockEntity be, float partial, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
                 if (DiegesisClient.station(be.getBlockPos()).map(s -> s.isInUse()).orElse(false)) return;
                 if(!Settings.POT.get())return;
-                WorldSoup.render(be,pose,buffers,light,7.3F);
+                WorldSoup.render(be,pose,buffers,light,ru.codex.stirandcharm.Broth.FARM_HEIGHT);
                 for (int i = 0; i < 6; i++) {
                     ItemStack stack = be.getItem(i);
                     if (KitchenIngredients.liquid(stack) || KitchenIngredients.dissolved(stack) || KitchenIngredients.emptyContainer(stack)) continue;
@@ -68,7 +68,7 @@ public final class WorldIngredients {
             pose.pushPose();pose.translate(.5,0,.5);
             pose.mulPose(Axis.YP.rotationDegrees(180-state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING).toYRot()));pose.translate(-.5,0,-.5);
             {
-                WorldSoup.render(be,pose,buffers,light,8.8F);
+                WorldSoup.render(be,pose,buffers,light,ru.codex.stirandcharm.Broth.CANDLELIGHT_HEIGHT);
                 for(int i=0;i<6;i++){
                     var stack=be.getItem(i);if(KitchenIngredients.liquid(stack) || KitchenIngredients.dissolved(stack) || KitchenIngredients.emptyContainer(stack))continue;
                     item(be,stack,pose,buffers,light,overlay,.32F+i%3*.18F,9.05F/16F,i<3?.35F:.65F,.19F,i*31);

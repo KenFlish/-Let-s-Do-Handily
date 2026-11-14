@@ -28,6 +28,7 @@ public final class KitchenBehavior implements StationBehavior {
             view.node("spoon").ifPresent(n -> n.setPainter(new PotBody(view, true)));
         }
         apply(view);
+        if (!bowl) ApproachCamera.open(view);
     }
     @Override public void onOpen(StationView view) {
         book.opened(view);
@@ -50,7 +51,6 @@ public final class KitchenBehavior implements StationBehavior {
     @Override public void frame(StationView view, float delta) {
         view.setCarriedHidden(false);
         view.node("result").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
-        view.node("containers").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
         if (!bowl) {
             view.node("pot_body").ifPresent(n -> n.setVisible(view.isInUse()));
             float x = view.state().getControl("spoon_x"), z = view.state().getControl("spoon_z");
@@ -91,15 +91,21 @@ public final class KitchenBehavior implements StationBehavior {
         }
     }
     @Override public boolean onItemClick(StationView view, String node, net.minecraft.world.item.ItemStack stack, int button, boolean shift) {
-        if (!bowl && node.equals("result")) { collect(view,button); return true; }
+        if (!bowl && node.equals("result")) { collect(view, button, Vessels.holds(view, stack), shift); return true; }
         if (bowl || !(node.equals("mouth") || node.startsWith("ingredient_"))) return false;
         var recipes = KitchenRecipes.all(view.level(), false);
         if (recipes.stream().anyMatch(h -> h.value().getIngredients().stream().anyMatch(i -> i.test(stack)))) return false;
         if (recipes.stream().map(h -> KitchenRecipes.dish(h.value())).noneMatch(d -> !d.isEmpty() && d.is(stack.getItem()))) return false;
         var data = new CompoundTag(); data.putBoolean("one", button == 1); view.sendAction("serve", data); return true;
     }
-    private void collect(StationView view,int button) {
-        var data=new CompoundTag(); data.putBoolean("one",button==1); data.putBoolean("inventory",net.minecraft.client.gui.screens.Screen.hasShiftDown());
+    private void collect(StationView view, int button) {
+        boolean shift = net.minecraft.client.gui.screens.Screen.hasShiftDown();
+        collect(view, button, false, shift);
+    }
+    private void collect(StationView view, int button, boolean vessel, boolean shift) {
+        var data=new CompoundTag();
+        data.putBoolean("one", !shift && (vessel || button == 1));
+        data.putBoolean("inventory", shift);
         view.sendAction("collect",data);
     }
     private void apply(StationView view) {

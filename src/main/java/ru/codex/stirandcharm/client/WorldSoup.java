@@ -11,17 +11,8 @@ import ru.codex.stirandcharm.*;
 /** Reads the native inventory; neither scene activation nor stirring is needed to show the soup. */
 final class WorldSoup {
     static void render(CookingPotBlockEntity pot,PoseStack pose,MultiBufferSource buffers,int light,float height){
-        int count=0,r=0,g=0,b=0;boolean any=!pot.getItem(7).isEmpty();
-        for(int i=0;i<6;i++){
-            var stack=pot.getItem(i);
-            if(stack.isEmpty() || KitchenIngredients.emptyContainer(stack))continue;
-            any=true;if(KitchenIngredients.water(stack))continue;
-            int rgb=KitchenIngredients.liquid(stack)?KitchenIngredients.liquidColor(stack):FoodColors.main(stack);
-            r+=rgb>>16&255;g+=rgb>>8&255;b+=rgb&255;count++;
-        }
-        if(!any)return;
-        int rgb=count==0?0x77B9D8:FoodColors.lighter((r/count<<16)|(g/count<<8)|b/count,.14F);
-        if(!pot.getItem(7).isEmpty())rgb=FoodColors.broth(pot.getLevel(),pot.getItem(7));
+        if(!ru.codex.stirandcharm.Broth.present(pot))return;
+        int rgb=BrothLook.color(pot.getLevel(),ru.codex.stirandcharm.Broth.contents(pot),pot.getItem(7));
         var sprite=Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(ResourceLocation.parse("minecraft:block/water_still"));
         var consumer=buffers.getBuffer(RenderType.translucent());var matrix=pose.last();
         float min=4.01F/16F,max=11.99F/16F,y=height/16F;

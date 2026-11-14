@@ -9,13 +9,9 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ru.codex.stirandcharm.client.WorldIngredients;
+/** The native mincer renderer stays on while its scene is open; only the food fits the open hopper. */
 @Mixin(MincerRenderer.class)
 public abstract class MincerFoodRenderer {
-    @Inject(method = "render(Lnet/satisfy/farm_and_charm/core/block/entity/MincerBlockEntity;FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;II)V", at = @At("HEAD"), cancellable = true, remap = false)
-    private void handily$singleModel(MincerBlockEntity be,float partial,PoseStack pose,MultiBufferSource buffers,int light,int overlay,CallbackInfo ci) {
-        if (!ru.codex.stirandcharm.client.MincerBody.renderingScene
-            && com.pockyl.diegesis.api.client.DiegesisClient.station(be.getBlockPos()).map(s -> s.isInUse()).orElse(false)) ci.cancel();
-    }
     @Inject(method = "render(Lnet/satisfy/farm_and_charm/core/block/entity/MincerBlockEntity;FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;II)V", at = @At("TAIL"), remap = false)
     private void handily$food(MincerBlockEntity be, float partial, PoseStack pose, MultiBufferSource buffers, int light, int overlay, CallbackInfo ci) {
         pose.pushPose(); pose.translate(.5,0,.5);

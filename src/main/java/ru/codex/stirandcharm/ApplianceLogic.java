@@ -26,7 +26,6 @@ public final class ApplianceLogic implements StationLogic {
         container = (Container) ctx.blockEntity();
         ctx.state().bindSlots("ingredients", SlotStorage.of(container, kind.start, kind.inputs));
         ctx.state().bindSlots("result", SlotStorage.of(container, kind.output, 1));
-        if (kind == Appliance.ROASTER) ctx.state().bindSlots("containers", SlotStorage.of(container, 6, 1));
         if (kind == Appliance.STOVE) {
             ctx.state().bindSlots("fuel", SlotStorage.of(container, 4, 1));
         }
@@ -41,7 +40,6 @@ public final class ApplianceLogic implements StationLogic {
         return switch (ref.group()) {
             case "ingredients" -> (kind != Appliance.ROASTER || accessible(ctx))
                 && kind.recipes(ctx.level()).stream().anyMatch(h -> h.value().getIngredients().stream().anyMatch(i -> i.test(stack)));
-            case "containers" -> kind.recipes(ctx.level()).stream().map(h -> kind.dish(h.value())).anyMatch(s -> !s.isEmpty() && s.is(stack.getItem()));
             case "fuel" -> FuelRegistry.get(stack) > 0;
             default -> false;
         };

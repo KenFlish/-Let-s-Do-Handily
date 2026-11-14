@@ -63,11 +63,11 @@ public final class StirAndCharm {
             .control("spoon_x", ControlSpec.range(-3, 3, 0).locked())
             .control("spoon_z", ControlSpec.range(-3, 3, 0).locked())
             .tank("broth", TankSpec.of(100));
-        if (!bowl) schema.slots("containers", 1, SlotRules.DEFAULT.kept());
         var type = Diegesis.station(id)
             .block(() -> BuiltInRegistries.BLOCK.get(ResourceLocation.parse(block.contains(":") ? block : "farm_and_charm:"+block)))
-            .schema(schema.build()).orientation(StationType.Orientation.PLAYER)
-            .openWhen((player, pos, state) -> !player.isSecondaryUseActive() && (!block.startsWith("candlelight:") || Settings.CANDLELIGHT.get()) && (bowl ? Settings.BOWL.get() : Settings.POT.get()))
+            .schema(schema.build()).orientation(bowl ? StationType.Orientation.PLAYER : StationType.Orientation.BLOCK)
+            .openWhen((player, pos, state) -> !player.isSecondaryUseActive() && (!block.startsWith("candlelight:") || Settings.CANDLELIGHT.get())
+                && (bowl ? Settings.BOWL.get() : Settings.POT.get()) && (bowl || !MealServing.servingInHand(player, pos)))
             .logic(context -> new KitchenLogic(context, bowl));
         if (!bowl) type.hidesBlock();
         return type.build();
@@ -82,15 +82,15 @@ public final class StirAndCharm {
             .slots("result", 1, SlotRules.DEFAULT.kept().accepts(s -> false))
             .control("progress", ControlSpec.range(0, 1, 0).locked())
             .control("heated", ControlSpec.toggle(false).locked());
-        if (kind == Appliance.ROASTER) schema.slots("containers", 1, SlotRules.DEFAULT.kept());
         if (kind == Appliance.STOVE) schema.slots("fuel", 1, SlotRules.DEFAULT.kept());
         if (kind == Appliance.ROASTER) schema.control("lid_open", ControlSpec.toggle(false).locked());
         var type = Diegesis.station(id(scene))
             .block(() -> BuiltInRegistries.BLOCK.get(ResourceLocation.parse(block)))
-            .schema(schema.build()).orientation(kind == Appliance.MINCER ? StationType.Orientation.PLAYER : StationType.Orientation.BLOCK)
-            .openWhen((player, pos, state) -> !player.isSecondaryUseActive() && kind.enabled() && (!block.startsWith("candlelight:") || Settings.CANDLELIGHT.get()))
+            .schema(schema.build()).orientation(StationType.Orientation.BLOCK)
+            .openWhen((player, pos, state) -> !player.isSecondaryUseActive() && kind.enabled()
+                && (!block.startsWith("candlelight:") || Settings.CANDLELIGHT.get()) && !MealServing.servingInHand(player, pos))
             .logic(ctx -> new ApplianceLogic(ctx, kind));
-        if (kind == Appliance.MINCER || kind == Appliance.ROASTER && !block.startsWith("candlelight:")) type.hidesBlock();
+        if (kind == Appliance.ROASTER && !block.startsWith("candlelight:")) type.hidesBlock();
         return type.build();
     }
 }

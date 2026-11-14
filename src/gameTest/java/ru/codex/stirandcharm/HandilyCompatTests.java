@@ -170,7 +170,8 @@ public final class HandilyCompatTests {
         var board=Diegesis.stationType(StirAndCharm.BOARD).orElseThrow();
         var mincer=Diegesis.stationType(StirAndCharm.id("mincer")).orElseThrow();
         var oven=Diegesis.stationType(StirAndCharm.id("stove")).orElseThrow();
-        h.assertTrue(board.orientation()==StationType.Orientation.BLOCK && mincer.orientation()==StationType.Orientation.PLAYER,"Board keeps world alignment while approach glances supply its camera");
+        h.assertTrue(board.orientation()==StationType.Orientation.BLOCK && mincer.orientation()==StationType.Orientation.BLOCK,
+            "Board and mincer stay aligned with the block; approach shots supply the camera side");
         h.assertTrue(oven.orientation()==StationType.Orientation.BLOCK,"Oven keeps a fixed front view");h.succeed();
     }
     @GameTest(template="empty") public static void candlelightOpenPotAndSoupWithoutStirring(GameTestHelper h){
@@ -179,6 +180,71 @@ public final class HandilyCompatTests {
         logic.onOpen(c,p);h.assertTrue(!c.blockState().hasProperty(RoasterLid.OPEN),"Candlelight pot has no lid mechanic");
         ((CookingPotBlockEntity)c.blockEntity()).setItem(0,new ItemStack(Items.WATER_BUCKET));logic.tick(c);
         h.assertTrue(c.state().getTank("broth").amount()>0 && c.state().getControl("spoon_x")==0,"Liquid is present before the first stirring input");
+        h.succeed();
+    }
+    private static CookingPotBlockEntity cookedPot(GameTestHelper h) {
+        var c=setup(h,"farm_and_charm:cooking_pot","cooking_pot");var pot=(CookingPotBlockEntity)c.blockEntity();
+        var holder=KitchenRecipes.all(c.level(),false).stream().filter(r -> r.value() instanceof CookingPotRecipe p && !p.requiresLearning()
+            && p.isContainerRequired() && p.getIngredients().stream().allMatch(i -> !i.isEmpty() && i.getItems().length>0)).findFirst().orElseThrow();
+        int slot=0;for(var ingredient:holder.value().getIngredients())pot.setItem(slot++,ingredient.getItems()[0].copyWithCount(1));
+        c.level().setBlockAndUpdate(c.pos().below(),Blocks.REDSTONE_BLOCK.defaultBlockState());
+        for(int i=0;i<=CookingPotBlockEntity.getMaxCookingTime();i++)pot.tick(c.level(),c.pos(),c.blockState(),pot);
+        h.assertTrue(!pot.getItem(7).isEmpty(),"A pot with heat and ingredients cooks a real serving");
+        h.assertTrue(!KitchenRecipes.dish(holder.value()).isEmpty(),"The tested recipe asks for a vessel");
+        return pot;
+    }
+    @GameTest(template="empty",timeoutTicks=120) public static void potClickWithVesselServesOneOntoCursor(GameTestHelper h){
+        var pot=cookedPot(h);var p=h.makeMockPlayer(GameType.SURVIVAL);
+        var dish=((MealVessel)pot).handily$vessel();h.assertTrue(!dish.isEmpty(),"Cooking remembers the vessel");
+        p.inventoryMenu.setCarried(dish.copyWithCount(1));
+        int before=pot.getItem(7).getCount();
+        int taken=MealServing.collect(p,pot,true,false);
+        h.assertTrue(taken==1,"One portion is served");
+        h.assertTrue(pot.getItem(7).getCount()==before-1,"The native output loses exactly one portion");
+        var portion=p.inventoryMenu.getCarried();
+        h.assertTrue(portion.getCount()==1 && !portion.isEmpty(),"The last vessel frees the cursor and the dish takes its place");
+        h.assertTrue(pot.getItem(6).isEmpty(),"The cursor vessel paid for the portion, not the station stock");
+        h.succeed();
+    }
+    @GameTest(template="empty",timeoutTicks=120) public static void potFullInventorySpendsNothing(GameTestHelper h){
+        var pot=cookedPot(h);var p=h.makeMockPlayer(GameType.SURVIVAL);
+        var dish=((MealVessel)pot).handily$vessel();
+        for(int i=0;i<36;i++)p.getInventory().setItem(i,new ItemStack(Items.BEDROCK,64));
+        p.inventoryMenu.setCarried(dish.copyWithCount(2));
+        int before=pot.getItem(7).getCount();
+        int taken=MealServing.collect(p,pot,true,false);
+        h.assertTrue(taken==0,"No room means no portion");
+        h.assertTrue(pot.getItem(7).getCount()==before,"The native output is untouched");
+        h.assertTrue(p.inventoryMenu.getCarried().getCount()==2,"The vessel is untouched");
+        h.succeed();
+    }
+    @GameTest(template="empty",timeoutTicks=120) public static void potShiftUsesInventoryAndStationVessels(GameTestHelper h){
+        var pot=cookedPot(h);var p=h.makeMockPlayer(GameType.SURVIVAL);
+        var dish=((MealVessel)pot).handily$vessel();
+        p.getInventory().add(dish.copyWithCount(1));p.getInventory().add(dish.copyWithCount(1));
+        int before=pot.getItem(7).getCount(),vessels=p.getInventory().countItem(dish.getItem());
+        int taken=MealServing.collect(p,pot,false,true);
+        h.assertTrue(taken>=1,"Shift takes what vessels and stock allow");
+        h.assertTrue(pot.getItem(7).getCount()==before-taken,"The output matches the taken portions");
+        h.assertTrue(p.getInventory().countItem(dish.getItem())==vessels-taken,"Only the used vessels left the inventory");
+        h.succeed();
+    }
+    @GameTest(template="empty",timeoutTicks=120) public static void potServeFromHandKeepsLastVesselSlot(GameTestHelper h){
+        var pot=cookedPot(h);var p=h.makeMockPlayer(GameType.SURVIVAL);
+        var dish=((MealVessel)pot).handily$vessel();
+        p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,dish.copyWithCount(1));
+        int before=pot.getItem(7).getCount();
+        int taken=MealServing.serveFromHand(p,pot);
+        h.assertTrue(taken==1 && pot.getItem(7).getCount()==before-1,"One hand-served portion leaves the pot");
+        h.assertTrue(!p.getMainHandItem().isEmpty() && p.getMainHandItem().getCount()==1,
+            "The emptied hand holds the dish");
+        h.succeed();
+    }
+    @GameTest(template="empty") public static void brothAppearsOnSlotChangeWithoutStirring(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:cooking_pot","cooking_pot");var logic=new KitchenLogic(c,false);
+        ((CookingPotBlockEntity)c.blockEntity()).setItem(0,new ItemStack(Items.WATER_BUCKET));
+        logic.onSlotChanged(c,SlotRef.of("ingredients",0));
+        h.assertTrue(c.state().getTank("broth").amount()>0,"The tank is published by the slot change itself");
         h.succeed();
     }
     @GameTest(template="empty",timeoutTicks=200) public static void bakeryJamUsesNativeStirringAndBottles(GameTestHelper h){

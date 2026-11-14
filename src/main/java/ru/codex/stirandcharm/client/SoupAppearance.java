@@ -26,15 +26,7 @@ final class SoupAppearance {
             pieces.add(new Floater(leaf ? Floater.LEAF : Floater.CHUNK, 0xFF000000 | rgb, leaf ? 1.1F : .85F));
             count += Math.min(4, stack.getCount() + 1);
         }
-        int red = 0, green = 0, blue = 0;
-        for (ItemStack stack : coloured) {
-            int color = KitchenIngredients.liquid(stack) ? KitchenIngredients.liquidColor(stack)
-                : KitchenIngredients.egg(stack) ? FoodColors.of(stack) : FoodColors.main(stack);
-            red += color >> 16 & 255; green += color >> 8 & 255; blue += color & 255;
-        }
-        int raw = coloured.isEmpty() ? 0x77B9D8 : (red / coloured.size() << 16 | green / coloured.size() << 8 | blue / coloured.size());
-        // Raw berries/herbs tint the water immediately, without turning every broth brown.
-        if (!coloured.isEmpty()) raw = FoodColors.lighter(raw, .14F);
+        int raw = BrothLook.color(view.level(), food, ItemStack.EMPTY);
         float progress = view.state().getControl("progress");
         ItemStack preview = meal.isEmpty() ? FarmCookbook.matching(view, false)
             .map(h -> KitchenRecipes.result(view.level(), h.value())).orElse(ItemStack.EMPTY) : meal;

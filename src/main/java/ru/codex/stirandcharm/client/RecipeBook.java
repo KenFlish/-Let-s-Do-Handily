@@ -120,7 +120,7 @@ final class RecipeBook implements NodePainter {
     /** Where the tabs take their paper from: clear of the page's darker edge. */
     private static final float TAB_PAPER_U = 8.0F;
     private static final float TAB_PAPER_V = 8.0F;
-    private static final float REFRESH_TIME = 1.0F;
+    private static final float REFRESH_TIME = 5.0F;
     /** How small it is closed. */
     private static final float CLOSED_SIZE = 0.62F;
     /** Closed, it shows its cover: the model turned about the spine, the spine moved to the left of the middle. */
@@ -279,6 +279,11 @@ final class RecipeBook implements NodePainter {
 
     boolean isOpen() {
         return wanted;
+    }
+
+    /** The player's or the station's items changed: read the list again on the next frame. */
+    void invalidate() {
+        refresh = 0.0F;
     }
 
     /** The player came to the pot: the book is open already, unless they put it away. */

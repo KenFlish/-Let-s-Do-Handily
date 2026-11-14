@@ -20,14 +20,14 @@ final class ApplianceBehavior implements StationBehavior {
         result = new ResultBadge(view, kind, source);
         view.node("result").ifPresent(n -> n.setPainter(result));
         if(kind==Appliance.ROASTER)TrayFood.frame(view);
+        ApproachCamera.open(view);
         if (kind == Appliance.ROASTER && view.level().getBlockState(view.pos()).hasProperty(RoasterLid.OPEN)) {
             view.node("roaster_body").ifPresent(n -> n.setPainter(new RoasterBody(view, false)));
             view.node("lid").ifPresent(n -> n.setPainter(new RoasterBody(view, true)));
             lidAngle=view.level().getBlockState(view.pos()).getValue(RoasterLid.OPEN) ? 105 : 0;
         }
-        if (kind == Appliance.MINCER) view.node("mincer_body").ifPresent(n -> n.setPainter(new MincerBody(view)));
     }
-    public void onOpen(StationView view) { view.setInventoryFilter(null); if(kind==Appliance.ROASTER)ApproachCamera.open(view); book.opened(view); }
+    public void onOpen(StationView view) { view.setInventoryFilter(null); ApproachCamera.open(view); book.opened(view); }
     public void onClose(StationView view) { cranking = false; pinned = false; book.shut(view); }
     public void onStateChanged(StationView view, StationState.Changes changes) { if (result != null) result.refresh(); }
     public void tick(StationView view) {
@@ -40,13 +40,10 @@ final class ApplianceBehavior implements StationBehavior {
         }
     }
     public void frame(StationView view, float dt) {
-        if(kind==Appliance.ROASTER)ApproachCamera.keep(view);
         view.setCarriedHidden(false);
         view.node("result").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
-        view.node("containers").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
         view.node("fuel").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
         view.node("fire").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
-        view.node("mincer_body").ifPresent(n -> n.setVisible(view.isInUse()));
         if(kind==Appliance.ROASTER)TrayFood.frame(view);
         if (kind == Appliance.ROASTER && view.level().getBlockState(view.pos()).hasProperty(RoasterLid.OPEN)) {
             view.node("roaster_body").ifPresent(n -> n.setVisible(view.isInUse()));
@@ -84,14 +81,20 @@ final class ApplianceBehavior implements StationBehavior {
         }
     }
     public boolean onItemClick(StationView view, String node, net.minecraft.world.item.ItemStack stack, int button, boolean shift) {
-        if (kind==Appliance.ROASTER && node.equals("result")) { collect(view,button); return true; }
+        if (kind==Appliance.ROASTER && node.equals("result")) { collect(view, button, Vessels.holds(view, stack), shift); return true; }
         if (kind != Appliance.ROASTER || !(node.equals("mouth") || node.startsWith("ingredient_"))) return false;
         if (kind.recipes(view.level()).stream().anyMatch(h -> h.value().getIngredients().stream().anyMatch(i -> i.test(stack)))) return false;
         if (kind.recipes(view.level()).stream().map(h -> kind.dish(h.value())).noneMatch(d -> !d.isEmpty() && d.is(stack.getItem()))) return false;
         var data = new CompoundTag(); data.putBoolean("one", button == 1); view.sendAction("serve", data); return true;
     }
-    private void collect(StationView view,int button) {
-        var data=new CompoundTag(); data.putBoolean("one",button==1); data.putBoolean("inventory",net.minecraft.client.gui.screens.Screen.hasShiftDown());
+    private void collect(StationView view, int button) {
+        boolean shift = net.minecraft.client.gui.screens.Screen.hasShiftDown();
+        collect(view, button, false, shift);
+    }
+    private void collect(StationView view, int button, boolean vessel, boolean shift) {
+        var data=new CompoundTag();
+        data.putBoolean("one", !shift && (vessel || button == 1));
+        data.putBoolean("inventory", shift);
         view.sendAction("collect",data);
     }
 }

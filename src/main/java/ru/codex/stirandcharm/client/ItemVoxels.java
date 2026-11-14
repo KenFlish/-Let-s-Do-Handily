@@ -32,6 +32,11 @@ final class ItemVoxels {
     private static final Map<Item, Optional<Icon>> ICONS = new HashMap<>();
     /** The model the game falls back on when the icons were read: a new one after every resource reload. */
     private static BakedModel readWith;
+    private static int generation;
+
+    static int generation() {
+        return generation;
+    }
 
     private ItemVoxels() {
     }
@@ -228,6 +233,7 @@ final class ItemVoxels {
             // Resources were reloaded: the icons read so far may show other textures now.
             readWith = missing;
             ICONS.clear();
+            generation++;
         }
         return ICONS.computeIfAbsent(stack.getItem(), item -> read(stack));
     }

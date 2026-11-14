@@ -1,5 +1,6 @@
 """Generate scenes and translations. Book node placement credits: LICENSE_HANDSON_DELIGHT."""
 import json
+from copy import deepcopy
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1] / 'src/main/resources/assets/handson_farm_charm'
@@ -16,10 +17,19 @@ def approach(scene):
             'target':camera['target'], 'time':.25, 'back_on_take':False, 'back_zone':0, 'hint':False})
     ui=[]
     for node in scene['nodes']:
-        if node['id'] in ('book_open','result','containers') or node['id'].startswith('result_'):
+        if node['id'] in ('book_open','result') or node['id'].startswith('result_'):
             node['pos'][0]-=8;node['pos'][2]-=8;ui.append(node)
     scene['nodes']=[n for n in scene['nodes'] if n not in ui]+[{'id':'approach_ui','pos':[8,0,8],'pickable':False,'children':ui}]
     return scene
+
+def find_node(scene, node_id):
+    for node in scene['nodes']:
+        if node.get('id') == node_id:
+            return node
+        for child in node.get('children', ()):
+            if child.get('id') == node_id:
+                return child
+    raise KeyError(node_id)
 
 def write(path, data):
     p = ROOT / path
@@ -31,7 +41,7 @@ for bowl in [False, True]:
     if not bowl:
         nodes += [
             {'id': 'pot_body', 'pickable': False},
-            {'id': 'broth', 'pickable': False, 'tank': {'tank': 'broth', 'inner': {'from': [4, 2, 4], 'to': [12, 9, 12]}}},
+            {'id': 'broth', 'pickable': False, 'tank': {'tank': 'broth', 'inner': {'from': [4.05, 2.05, 4.05], 'to': [11.95, 8.95, 11.95]}}},
             {'id': 'spoon', 'pos': [8, 0, 8], 'pickable': False, 'children': [
                 {'id': 'stir_handle', 'strokes': True, 'collider': {'from': [-8.5, 7.5, -1], 'to': [-2.5, 13, 3]},
                  'tooltip': 'handson_farm_charm.stir'}
@@ -55,9 +65,6 @@ for bowl in [False, True]:
     if bowl: result['slot'] = {'slot': 'result[0]', 'size': 4, 'display': 'hidden', 'highlight': False}
     else: result['collider'] = {'from': [-2.3, -.5, -2.3], 'to': [2.3, .7, 2.3]}
     nodes.append(result)
-    if not bowl:
-        nodes.append({'id': 'containers', 'pos': [-3, 3, 8], 'slot': {'slot': 'containers[0]', 'size': 3, 'highlight': False},
-                      'tooltip': 'handson_farm_charm.containers'})
     # Book placement/collider adapted from Hands-On Delight (MIT, LICENSE_HANDSON_DELIGHT).
     nodes.append({'id': 'book_open', 'pos': [16.33, 21.22, -4], 'rotation': [-50, 0, 0], 'scale': .69,
                   'hidden': True, 'collider': {'from': [-4.4, -.4, -3.9], 'to': [4.4, 1.4, 3.9]}})
@@ -71,7 +78,7 @@ for bowl in [False, True]:
                              'background': '#00000000', 'slot_color': '#8C1E140C'},
         'nodes': nodes,
     }
-    write('diegesis/scenes/' + ('crafting_bowl' if bowl else 'cooking_pot') + '.json', scene)
+    write('diegesis/scenes/' + ('crafting_bowl' if bowl else 'cooking_pot') + '.json', approach(deepcopy(scene)))
 
 # Each appliance keeps its own native input, fuel and container slots.
 from copy import deepcopy
@@ -80,7 +87,6 @@ for kind, count in [('mincer', 1), ('stove', 3), ('roaster', 6)]:
     appliance['work_plane'] = 18 if kind == 'stove' else 14
     nodes = []
     if kind == 'mincer':
-        nodes.append({'id': 'mincer_body', 'pickable': False})
         nodes.append({'id': 'crank_handle', 'pos': [1.7, 10, 7.8], 'rotation': [0, 0, 90],
                       'strokes': True, 'collider': {'from': [-5, -2, -6], 'to': [5, 2, 6]},
                       'tooltip': 'handson_farm_charm.crank'})
@@ -100,8 +106,6 @@ for kind, count in [('mincer', 1), ('stove', 3), ('roaster', 6)]:
                    'collider': {'from': [-5.2, -.2, -8.2], 'to': [5.2, 2.3, .3]},
                    'tooltip': 'handson_farm_charm.lid'}]
         positions = [[5.2,1.3,6.2],[9.8,1.4,8.4],[6.9,1.7,10.1],[10.1,2,5.8],[4.9,2.2,9.9],[8,2.45,7.6]]
-        nodes.append({'id': 'containers', 'pos': [-3, 4, 8], 'slot': {'slot': 'containers[0]', 'size': 3.5, 'highlight': False},
-                      'tooltip': 'handson_farm_charm.containers'})
     for i, position in enumerate(positions):
         nodes.append({'id': f'ingredient_{i}', 'pos': position,
                       'collider': {'from': [-1.5, 0, -1.5], 'to': [1.5, 1, 1.5]},
@@ -123,13 +127,13 @@ for kind, count in [('mincer', 1), ('stove', 3), ('roaster', 6)]:
             if n['id'] == 'result': n['pos'] = [-5, 11, -3]; n['rotation'] = [-85,0,0]
             if n['id'] == 'book_open': n['pos'] = [21, 11, -4]; n['rotation'] = [-85,0,0]
     appliance['nodes'] = nodes
-    write(f'diegesis/scenes/{kind}.json', approach(appliance) if kind=='roaster' else appliance)
+    write(f'diegesis/scenes/{kind}.json', approach(appliance) if kind in ('roaster', 'mincer') else appliance)
 
 # The native board renderer supplies the knife, chopping animation and assembly layers.
 board = deepcopy(scene)
 board['camera'] = {'position': [8, 35.5, -21], 'target': [8, 1, 8], 'fov': 30, 'neighbors': {'enabled': False}}
 board['work_plane'] = 4
-board['nodes'] = [deepcopy(n) for n in scene['nodes'] if n['id'] == 'book_open']
+board['nodes'] = [deepcopy(find_node(scene, 'book_open'))]
 board['nodes'][0]['pos'] = [15.5, 15.72, -4]
 board['nodes'] += [
     {'id': 'surface', 'collider': {'from': [1, 0, 3], 'to': [11, 5, 13]}, 'tooltip': 'handson_farm_charm.board.surface'},
@@ -149,7 +153,7 @@ write('diegesis/scenes/cutting_board.json', approach(board))
 
 pot = json.loads((ROOT / 'diegesis/scenes/cooking_pot.json').read_text(encoding='utf-8'))
 for n in pot['nodes']:
-    if n['id'] == 'broth': n['tank']['inner']['to'][1] = 11
+    if n['id'] == 'broth': n['tank']['inner']['to'][1] = 10.95
     if n['id'].startswith('ingredient_'): n['pos'][1] += 2.5
     if n['id'] == 'mouth': n['collider'] = {'from': [4, 11, 4], 'to': [12, 12, 12]}
     if n['id'] == 'spoon':
@@ -162,7 +166,7 @@ for n in pan['nodes']:
     if n['id'] == 'mouth': n['collider'] = {'from': [3, 2.2, 3], 'to': [13, 3, 13]}
 write('diegesis/scenes/candlelight_pan.json', pan)
 jam=deepcopy(scene)
-jam['nodes']=[deepcopy(n) for n in scene['nodes'] if n['id']=='book_open']+[
+jam['nodes']=[deepcopy(find_node(scene,'book_open'))]+[
     {'id':'mouth','collider':{'from':[4.5,3,4.5],'to':[11.5,7,11.5]}},
     {'id':'stir_handle','strokes':True,'collider':{'from':[5.5,8,5.5],'to':[10.5,16,10.5]},'tooltip':'handson_farm_charm.jam.stir'},
     {'id':'result','pos':[-1,16,-1],'rotation':[-50,0,0],'collider':{'from':[-2.3,-.5,-2.3],'to':[2.3,.7,2.3]}},

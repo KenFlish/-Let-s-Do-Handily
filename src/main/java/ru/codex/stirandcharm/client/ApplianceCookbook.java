@@ -28,7 +28,6 @@ final class ApplianceCookbook implements RecipeBook.Source {
     }
     public List<ItemStack> inStation(StationView view) {
         var list = new ArrayList<>(List.of(view.state().getItems("ingredients")));
-        if (kind == Appliance.ROASTER) list.addAll(List.of(view.state().getItems("containers")));
         return list;
     }
     public boolean available(StationView view, RecipeBook.Page page) {
@@ -44,7 +43,6 @@ final class ApplianceCookbook implements RecipeBook.Source {
         var c = new SimpleContainer(8);
         var inputs = view.state().getItems("ingredients");
         for (int i = 0; i < inputs.length; i++) c.setItem(i, inputs[i].copy());
-        if (kind == Appliance.ROASTER) c.setItem(6, view.state().getItems("containers")[0].copy());
         return c;
     }
     public void picked(StationView view, RecipeBook.Page page) {

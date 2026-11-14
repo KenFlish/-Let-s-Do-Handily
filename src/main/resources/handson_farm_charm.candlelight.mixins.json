@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "ru.codex.stirandcharm.mixin.candlelight",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "ru.codex.stirandcharm.mixin.candlelight.CandlelightMixinPlugin",
+  "mixins": ["CandlelightPotShape"],
+  "injectors": {"defaultRequire": 1}
+}

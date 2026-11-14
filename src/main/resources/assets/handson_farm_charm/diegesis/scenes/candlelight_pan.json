@@ -328,20 +328,6 @@
       "pickable": false,
       "children": [
         {
-          "id": "containers",
-          "pos": [
-            -11,
-            4,
-            0
-          ],
-          "slot": {
-            "slot": "containers[0]",
-            "size": 3.5,
-            "highlight": false
-          },
-          "tooltip": "handson_farm_charm.containers"
-        },
-        {
           "id": "result",
           "pos": [
             -9,

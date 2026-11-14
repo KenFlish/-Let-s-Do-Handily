@@ -32,7 +32,6 @@ final class FarmCookbook implements RecipeBook.Source {
     }
     @Override public List<ItemStack> inStation(StationView view) {
         var items = new ArrayList<>(List.of(view.state().getItems("ingredients")));
-        if (!bowl) items.addAll(List.of(view.state().getItems("containers")));
         return items;
     }
     @Override public boolean available(StationView view, RecipeBook.Page page) {
@@ -44,7 +43,6 @@ final class FarmCookbook implements RecipeBook.Source {
         ItemStack[] inputs = view.state().getItems("ingredients");
         for (int i = 0; i < inputs.length; i++) c.setItem(i, inputs[i].copy());
         c.setItem(bowl ? 4 : 7, view.state().getItems("result")[0].copy());
-        if (!bowl) c.setItem(6, view.state().getItems("containers")[0].copy());
         return RecipeTransfer.plan(player.getInventory(), c, inputs.length, bowl, recipe.get().value().getIngredients(),
             ItemStack.EMPTY).isPresent();
     }

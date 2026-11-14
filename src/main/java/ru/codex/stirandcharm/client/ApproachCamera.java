@@ -1,22 +1,18 @@
 package ru.codex.stirandcharm.client;
 
 import com.pockyl.diegesis.api.client.StationView;
-import net.minecraft.client.Minecraft;
-import net.minecraft.core.Direction;
 
-/** Change the camera, keeping the working surface aligned with the actual block. */
+/**
+ * Turns the station's interface nodes to the side the camera opens on. The camera itself is placed on
+ * that side by {@link ru.codex.stirandcharm.mixin.CameraSideMixin} before the approach starts; the
+ * block model is never turned by this, so the pot and the mincer keep their place in the world.
+ */
 final class ApproachCamera {
-    static void keep(StationView view){if(view.isFocused() && view.currentGlance().isEmpty())open(view);}
     static void open(StationView view) {
-        var player=Minecraft.getInstance().player;
-        if(player==null)return;
-        double dx=player.getX()-view.pos().getX()-.5, dz=player.getZ()-view.pos().getZ()-.5;
-        var towards=Direction.getNearest((float)dx,0,(float)dz);
-        int turns=Math.floorMod(towards.get2DDataValue()-view.facing().get2DDataValue(),4);
-        // Minecraft horizontal direction indices advance clockwise; scene coordinates face north.
-        float angle=-turns*90F;
-        view.glance("approach_"+turns);
-        view.node("approach_ui").ifPresent(n -> n.rotateTo(0,angle,0,0));
+        if (!HandilyCamera.handily(view)) return;
+        int turns = HandilyCamera.side(view.pos(), view.facing());
+        view.node("approach_ui").ifPresent(n -> n.rotateTo(0, -turns * 90F, 0, 0));
     }
-    private ApproachCamera(){}
+
+    private ApproachCamera() {}
 }

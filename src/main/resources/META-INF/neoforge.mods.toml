@@ -11,6 +11,8 @@ description='''Cook Farm & Charm dishes in the world: pot, bowl, cutting board, 
 
 [[mixins]]
 config="handson_farm_charm.mixins.json"
+[[mixins]]
+config="handson_farm_charm.candlelight.mixins.json"
 
 [[dependencies.handson_farm_charm]]
 modId="minecraft"
