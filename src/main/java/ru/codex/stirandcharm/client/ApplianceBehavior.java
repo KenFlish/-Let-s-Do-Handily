@@ -19,6 +19,7 @@ final class ApplianceBehavior implements StationBehavior {
         view.node("book_open").ifPresent(n -> n.setPainter(book));
         result = new ResultBadge(view, kind, source);
         view.node("result").ifPresent(n -> n.setPainter(result));
+        if(kind==Appliance.ROASTER)TrayFood.frame(view);
         if (kind == Appliance.ROASTER && view.level().getBlockState(view.pos()).hasProperty(RoasterLid.OPEN)) {
             view.node("roaster_body").ifPresent(n -> n.setPainter(new RoasterBody(view, false)));
             view.node("lid").ifPresent(n -> n.setPainter(new RoasterBody(view, true)));
@@ -26,7 +27,7 @@ final class ApplianceBehavior implements StationBehavior {
         }
         if (kind == Appliance.MINCER) view.node("mincer_body").ifPresent(n -> n.setPainter(new MincerBody(view)));
     }
-    public void onOpen(StationView view) { view.setInventoryFilter(null); book.opened(view); }
+    public void onOpen(StationView view) { view.setInventoryFilter(null); if(kind==Appliance.ROASTER)ApproachCamera.open(view); book.opened(view); }
     public void onClose(StationView view) { cranking = false; pinned = false; book.shut(view); }
     public void onStateChanged(StationView view, StationState.Changes changes) { if (result != null) result.refresh(); }
     public void tick(StationView view) {
@@ -39,12 +40,14 @@ final class ApplianceBehavior implements StationBehavior {
         }
     }
     public void frame(StationView view, float dt) {
-        view.setCarriedHidden(true);
+        if(kind==Appliance.ROASTER)ApproachCamera.keep(view);
+        view.setCarriedHidden(false);
         view.node("result").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
         view.node("containers").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
         view.node("fuel").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
         view.node("fire").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
         view.node("mincer_body").ifPresent(n -> n.setVisible(view.isInUse()));
+        if(kind==Appliance.ROASTER)TrayFood.frame(view);
         if (kind == Appliance.ROASTER && view.level().getBlockState(view.pos()).hasProperty(RoasterLid.OPEN)) {
             view.node("roaster_body").ifPresent(n -> n.setVisible(view.isInUse()));
             boolean open=view.state().getControl("lid_open")>.5F;

@@ -13,3 +13,5 @@ In version 0.2.0 the cover references Minecraft's enchanting-table book texture 
 Version 0.4.0 also adapts `ItemVoxels.java` from the same Hands-On Delight commit under its MIT license, for pixel-volume ingredients and separated cut pieces. Knife motion and dashed cut marks follow Hands-On Delight's board interaction design, using Farm & Charm's native recipes, chop thresholds, inventories, durability and byproducts. Hands-On Delight remains optional.
 
 Candlelight 2.1.15 by satisfy is an optional external integration. Its installed block models and textures are used at runtime; no Candlelight assets or binaries are included. Minecraft's vanilla `BookModel` supplies the cookbook geometry with its original UV mapping.
+
+Bakery 2.1.11 by satisfy is an optional external integration in 0.5.0. Its native jam inventory, recipes, renderer, whisk, sounds, stirring rules, consistency and filled-jar components remain owned by Bakery. Its JAR is a compile-only dependency; no Bakery binaries or assets are redistributed. Tray food uses the MIT-adapted `ItemVoxels` renderer above. Action sounds reference existing Minecraft sound events.

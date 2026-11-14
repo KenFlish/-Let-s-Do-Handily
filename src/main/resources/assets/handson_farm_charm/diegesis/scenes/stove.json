@@ -106,7 +106,8 @@
         "size": 3,
         "item_size": 2.6,
         "display": "flat",
-        "counts": "hover"
+        "counts": "hover",
+        "highlight": false
       },
       "rotation": [
         -90,
@@ -138,7 +139,8 @@
         "size": 3,
         "item_size": 2.6,
         "display": "flat",
-        "counts": "hover"
+        "counts": "hover",
+        "highlight": false
       },
       "rotation": [
         -90,
@@ -170,7 +172,8 @@
         "size": 3,
         "item_size": 2.6,
         "display": "flat",
-        "counts": "hover"
+        "counts": "hover",
+        "highlight": false
       },
       "rotation": [
         -90,

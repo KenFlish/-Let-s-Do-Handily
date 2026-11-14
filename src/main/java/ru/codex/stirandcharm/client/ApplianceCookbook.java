@@ -22,7 +22,7 @@ final class ApplianceCookbook implements RecipeBook.Source {
             if (kind != Appliance.MINCER) foot.add(new ItemStack(Items.CLOCK));
             pages.add(new RecipeBook.Page(holder.id(), KitchenRecipes.result(view.level(), holder.value()),
                 holder.value().getIngredients().stream().filter(i -> !i.isEmpty()).toList(), foot,
-                kind == Appliance.MINCER ? null : Component.translatable("handson_farm_charm.book.seconds", kind == Appliance.STOVE ? 12 : 45), false));
+                kind == Appliance.MINCER ? null : Component.translatable("handson_farm_charm.book.seconds", kind == Appliance.STOVE ? 12 : 35), false));
         }
         return pages;
     }

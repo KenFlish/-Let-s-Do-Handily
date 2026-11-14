@@ -1,14 +1,14 @@
 package ru.codex.stirandcharm;
-
 import com.mojang.logging.LogUtils;
 import com.pockyl.diegesis.api.client.DiegesisClient;
+import com.pockyl.diegesis.impl.client.DiegesisClientRuntime;
+import com.pockyl.diegesis.impl.client.focus.Projector;
 import net.minecraft.client.*;
 import net.minecraft.core.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Blocks;
-import net.satisfy.farm_and_charm.core.block.CuttingBoardBlock;
 import net.satisfy.farm_and_charm.core.block.entity.*;
 import net.satisfy.farm_and_charm.core.recipe.CuttingBoardRecipe;
 import net.neoforged.api.distmarker.Dist;
@@ -19,45 +19,84 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 @EventBusSubscriber(modid=StirAndCharm.ID,value=Dist.CLIENT)
 public final class CompatVisual {
     private static int ticks;
-    private static final String[] BLOCKS={"farm_and_charm:cutting_board","candlelight:cooking_pan","candlelight:cooking_pot"};
-    private static final BlockPos[] POS={new BlockPos(0,70,0),new BlockPos(2,70,0),new BlockPos(-2,70,0)};
-    @SubscribeEvent public static void tick(ClientTickEvent.Post e) {
-        if(!Boolean.getBoolean("handily.compatVisual")) return;
+    private static final String[] BLOCKS={"farm_and_charm:cutting_board","candlelight:cooking_pan","candlelight:cooking_pot","farm_and_charm:roaster","bakery:small_cooking_pot","farm_and_charm:cooking_pot"};
+    private static final BlockPos[] POS={new BlockPos(0,70,0),new BlockPos(2,70,0),new BlockPos(-2,70,0),new BlockPos(4,70,0),new BlockPos(-4,70,0),new BlockPos(6,70,0)};
+    private static void shot(Minecraft mc,String name){Screenshot.grab(mc.gameDirectory,"handily-050-"+name+".png",mc.getMainRenderTarget(),msg -> LogUtils.getLogger().info("Compat screenshot: {}",msg.getString()));}
+    private static void open(Minecraft mc,int i){
+        if(DiegesisClient.isFocused())DiegesisClientRuntime.goOver(POS[i],.35F);
+        else DiegesisClientRuntime.onUseBlock(mc.player,net.minecraft.world.InteractionHand.MAIN_HAND,
+            new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(POS[i]),Direction.UP,POS[i],false));
+    }
+    @SubscribeEvent public static void tick(ClientTickEvent.Post e){
+        if(!Boolean.getBoolean("handily.compatVisual"))return;
         var mc=Minecraft.getInstance();if(mc.level==null || mc.player==null || mc.getSingleplayerServer()==null)return;
         ticks++;
-        if(ticks==25) {
+        if(ticks==25){
             mc.options.pauseOnLostFocus=false;mc.options.renderDistance().set(5);
             mc.getSingleplayerServer().execute(()->{
                 var level=mc.getSingleplayerServer().overworld();level.setDayTime(6000);
-                var p=mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst();p.teleportTo(.5,70,-2.2);
-                p.getInventory().clearContent();
-                for(int i=0;i<POS.length;i++) {
-                    level.setBlockAndUpdate(POS[i].below(),Blocks.REDSTONE_BLOCK.defaultBlockState());
+                var p=mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst();p.connection.teleport(.5,70,-2.2,0,45);
+                p.getInventory().clearContent();p.getInventory().selected=8;
+                for(int i=0;i<POS.length;i++){
+                    level.setBlockAndUpdate(POS[i].below(),BuiltInRegistries.BLOCK.get(ResourceLocation.parse("farm_and_charm:stove")).defaultBlockState());
                     level.setBlockAndUpdate(POS[i],Blocks.AIR.defaultBlockState());
                     level.setBlockAndUpdate(POS[i],BuiltInRegistries.BLOCK.get(ResourceLocation.parse(BLOCKS[i])).defaultBlockState());
                 }
-                var board=(CuttingBoardBlockEntity)level.getBlockEntity(POS[0]);
-                board.setKnife(BuiltInRegistries.ITEM.stream().map(ItemStack::new).filter(s -> s.is(CuttingBoardBlock.KNIVES)).findFirst().orElseThrow());
-                var cut=BoardRecipes.all(level).stream().filter(h -> h.value() instanceof CuttingBoardRecipe).findFirst().orElseThrow().value();
-                board.startCut(cut.getIngredients().getFirst().getItems()[0].copyWithCount(1));
-                var pot=(CookingPotBlockEntity)level.getBlockEntity(POS[2]);
-                pot.setItem(0,new ItemStack(Items.WATER_BUCKET));pot.setItem(1,new ItemStack(Items.CARROT));
-                var pan=(RoasterBlockEntity)level.getBlockEntity(POS[1]);pan.setItem(0,new ItemStack(Items.BEEF));pan.setItem(1,new ItemStack(Items.POTATO));
-                for(var entity:level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,new net.minecraft.world.phys.AABB(-12,68,-8,12,78,8))) entity.discard();
+                var cut=(CuttingBoardRecipe)BoardRecipes.all(level).stream().filter(h -> h.value() instanceof CuttingBoardRecipe && h.id().getPath().contains("tomato")).findFirst().orElseThrow().value();
+                p.getInventory().setItem(0,cut.getIngredient().getItems()[0].copyWithCount(3));
+                p.getInventory().setItem(1,BuiltInRegistries.ITEM.stream().map(ItemStack::new).filter(BoardTools::knife).findFirst().orElseThrow());
+                var pan=(RoasterBlockEntity)level.getBlockEntity(POS[1]);
+                var roaster=(RoasterBlockEntity)level.getBlockEntity(POS[3]);
+                for(var tray:new RoasterBlockEntity[]{pan,roaster}){tray.setItem(0,new ItemStack(Items.BEEF));tray.setItem(1,new ItemStack(Items.POTATO));tray.setItem(2,new ItemStack(Items.CARROT));}
+                level.setBlockAndUpdate(POS[3],level.getBlockState(POS[3]).setValue(RoasterLid.OPEN,true));
+                var pot=(CookingPotBlockEntity)level.getBlockEntity(POS[5]);pot.setItem(0,new ItemStack(Items.WATER_BUCKET));pot.setItem(1,new ItemStack(Items.CARROT));
+                var jam=(net.satisfy.bakery.core.block.entity.SmallCookingPotBlockEntity)level.getBlockEntity(POS[4]);
+                for(var ingredient:JamLogic.recipes(level).getFirst().value().getIngredients())jam.addIngredient(ingredient.getItems()[0].copyWithCount(1),p);
+                for(var entity:level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,new net.minecraft.world.phys.AABB(-12,68,-8,12,78,8)))entity.discard();
+                p.inventoryMenu.broadcastChanges();
             });
         }
-        for(int i=0;i<POS.length;i++) {
-            if(ticks==90+i*100) {
-                if(i==0) mc.setScreen(null);
-                com.pockyl.diegesis.impl.client.DiegesisClientRuntime.goOver(POS[i],.35F);
-                if(i==0) com.pockyl.diegesis.impl.client.DiegesisClientRuntime.onUseBlock(mc.player,net.minecraft.world.InteractionHand.MAIN_HAND,
-                    new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(POS[i]),Direction.UP,POS[i],false));
-            }
-            if(ticks==145+i*100) {
-                if(!DiegesisClient.isFocused()) throw new IllegalStateException("Compat station failed to open: "+BLOCKS[i]);
-                Screenshot.grab(mc.gameDirectory,"handily-040-"+i+".png",mc.getMainRenderTarget(),msg -> LogUtils.getLogger().info("Compat screenshot: {}",msg.getString()));
-            }
+        if(ticks==90){mc.setScreen(null);open(mc,0);}
+        if(ticks==115)DiegesisClient.station(POS[0]).orElseThrow().takeFromInventory(0);
+        if(ticks==130){
+            var view=DiegesisClient.station(POS[0]).orElseThrow();var at=Projector.toScreen(view.toWorld(6,4.9F,8));
+            if(at==null || mc.screen==null)throw new IllegalStateException("No board click target");
+            mc.screen.mouseMoved(at.x,at.y);mc.screen.mouseClicked(at.x,at.y,0);mc.screen.mouseReleased(at.x,at.y,0);
         }
-        if(ticks==365) mc.stop();
+        if(ticks==155){
+            var view=DiegesisClient.station(POS[0]).orElseThrow();
+            if(view.state().getItems("pending")[0].getCount()!=3 || !mc.player.inventoryMenu.getCarried().isEmpty())throw new IllegalStateException("Actual board cursor click failed");
+            LogUtils.getLogger().info("HANDILY_CHECK actual board cursor placement: PASS");shot(mc,"board");
+        }
+        if(ticks==190)open(mc,1);
+        if(ticks==245)shot(mc,"pan");
+        if(ticks==290)open(mc,2);
+        if(ticks==345)shot(mc,"candlelight-empty-floor");
+        if(ticks==390)open(mc,3);
+        if(ticks==445)shot(mc,"roaster-plating");
+        if(ticks==460)com.pockyl.diegesis.impl.client.focus.FocusController.get().requestExit();
+        if(ticks==490)mc.getSingleplayerServer().execute(()->mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst().connection.teleport(4.5,70,-1.5,0,50));
+        if(ticks==525){if(DiegesisClient.isFocused())throw new IllegalStateException("World view remained focused");shot(mc,"roaster-world");}
+        if(ticks==540)mc.getSingleplayerServer().execute(()->mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst().connection.teleport(6.5,70,-1.5,0,50));
+        if(ticks==575)shot(mc,"soup-without-stirring-world");
+        if(ticks==590)mc.getSingleplayerServer().execute(()->mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst().connection.teleport(-3.5,70,-2,0,45));
+        if(ticks==625)open(mc,4);
+        if(ticks==680)shot(mc,"bakery-jam");
+        if(ticks==700)com.pockyl.diegesis.impl.client.focus.FocusController.get().requestExit();
+        if(ticks==735)mc.getSingleplayerServer().execute(()->mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst().connection.teleport(2.2,70,.5,90,45));
+        if(ticks==770)open(mc,0);
+        if(ticks==825){
+            var view=DiegesisClient.station(POS[0]).orElseThrow();
+            if(!view.currentGlance().orElse("").equals("approach_1"))throw new IllegalStateException("Board failed to keep east approach: "+view.currentGlance());
+            LogUtils.getLogger().info("HANDILY_CHECK board east approach: PASS");shot(mc,"board-east");
+        }
+        if(ticks==850)com.pockyl.diegesis.impl.client.focus.FocusController.get().requestExit();
+        if(ticks==875)mc.getSingleplayerServer().execute(()->{
+            var level=mc.getSingleplayerServer().overworld();
+
+            mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst().connection.teleport(-1.5,70,-1.2,0,55);
+        });
+        if(ticks==910)shot(mc,"candlelight-world-floor");
+        if(ticks==925)mc.stop();
     }
 }

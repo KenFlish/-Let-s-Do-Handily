@@ -13,5 +13,11 @@
     "filename": "architectury-13.0.11-neoforge.jar",
     "url": "https://cdn.modrinth.com/data/lhGA9TYQ/versions/1IiqEQGl/architectury-13.0.11-neoforge.jar",
     "sha256": "9cc92f2c09533fc5482c60f993bd891c655a0e32b637037cdcb7c2b23adedeeb"
+  },
+  {
+    "filename": "letsdo-bakery-neoforge-2.1.11.jar",
+    "directory": "compat",
+    "url": "https://cdn.modrinth.com/data/oNB5jhlA/versions/4pEnkp1M/letsdo-bakery-neoforge-2.1.11.jar",
+    "sha256": "7cf41c0fad07939f47b67550029a5335da4ca761ef567c50ced888240063d474"
   }
 ]

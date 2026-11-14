@@ -9,6 +9,11 @@ public final class BoardTools {
     public static boolean knife(ItemStack stack) {
         return stack.getItem() instanceof CleaverItem || stack.is(CuttingBoardBlock.KNIVES);
     }
+    public static boolean canStick(ItemStack s){return knife(s) || s.getItem() instanceof net.minecraft.world.item.TieredItem || s.getItem() instanceof net.minecraft.world.item.TridentItem || s.getItem() instanceof net.minecraft.world.item.ShearsItem;}
+    public static boolean supports(ItemStack tool,ItemStack food){
+        boolean log=net.satisfy.farm_and_charm.core.util.Strippables.strip(food).isPresent();
+        return log ? net.satisfy.farm_and_charm.core.util.Strippables.isAxe(tool) : knife(tool);
+    }
     public static float markZ(int chop,int total) {return 8-3+6F*(chop+1)/(total+1);}
     private BoardTools() {}
 }

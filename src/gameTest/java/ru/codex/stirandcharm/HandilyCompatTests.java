@@ -77,7 +77,7 @@ public final class HandilyCompatTests {
         var holder=BoardRecipes.all(ctx.level()).stream().filter(r -> r.value() instanceof CuttingBoardRecipe && r.value().getIngredients().getFirst().getItems().length>0).findFirst().orElseThrow();
         var recipe=(CuttingBoardRecipe)holder.value();p.getInventory().add(recipe.getIngredient().getItems()[0].copyWithCount(1));
         logic.onCustomAction(ctx,p,"fill",fill(holder));
-        h.assertTrue(board.isCutting() && p.getInventory().isEmpty(),"One input transferred to native pending slot");
+        h.assertTrue(board.isCutting() && p.getInventory().countItem(tool.getItem())==1,"One input transferred to native pending slot");
         int count=CuttingBoardBlockEntity.requiredChops(tool,recipe);
         for(int i=0;i<count;i++) h.runAtTickTime(1+i*5,()->{
             int before=board.getPendingChops();var tag=new CompoundTag();tag.putInt("mark",before);tag.putFloat("x",8);tag.putFloat("z",BoardTools.markZ(before,count));
@@ -94,7 +94,7 @@ public final class HandilyCompatTests {
                 int wanted=outputs.stream().filter(s -> ItemStack.isSameItemSameComponents(s,expected)).mapToInt(ItemStack::getCount).sum();
                 h.assertTrue(actual==wanted,"Result and byproducts must match native recipe");
             }
-            h.assertTrue(board.getKnife().getDamageValue()==tool.getDamageValue()+1,"Native knife durability charged once");h.succeed();
+            h.assertTrue(p.getInventory().items.stream().anyMatch(s -> s.is(tool.getItem()) && s.getDamageValue()==tool.getDamageValue()+1),"Native knife durability charged once");h.succeed();
         });
     }
     @GameTest(template="empty") public static void boardAssemblyRecipesIncludeFinisher(GameTestHelper h) {
@@ -106,9 +106,10 @@ public final class HandilyCompatTests {
             for(var ingredient:recipe.getIngredients().reversed()) p.getInventory().add(ingredient.getItems()[0].copyWithCount(1));
             logic.onCustomAction(ctx,p,"fill",fill(holder));
             h.assertTrue(recipe.matches(new CuttingBoardAssemblyRecipe.Input(board.getItems()),ctx.level()),"Transferred layout matches "+holder.id());
+            var expected=BoardDishes.make(ctx.level(),recipe,board.getItems()).orElseThrow().result();
             logic.onCustomAction(ctx,p,"assemble",new CompoundTag());
             h.assertTrue(board.isEmpty() && p.getInventory().isEmpty(),"Assembly consumes each ingredient once");
-            h.assertTrue(ItemStack.matches(ctx.state().getItems("result")[0],recipe.getResult()),"Native assembly output preserved");tested++;
+            h.assertTrue(ItemStack.matches(ctx.state().getItems("result")[0],expected),"Native assembly output preserved for "+holder.id()+": wanted "+expected+", got "+ctx.state().getItems("result")[0]);tested++;
         }
         h.assertTrue(tested>0,"Assembly recipes exercised");h.succeed();
     }
@@ -118,5 +119,120 @@ public final class HandilyCompatTests {
         var before=p.getInventory().getItem(0).copy();
         h.assertTrue(BoardRecipes.plan(p.getInventory(),List.of(new ItemStack(Items.WHEAT)),recipe).isEmpty(),"Missing finisher rejects whole recipe");
         h.assertTrue(ItemStack.matches(before,p.getInventory().getItem(0)),"Failure must leave inventory unchanged");h.succeed();
+    }
+    @GameTest(template="empty",timeoutTicks=220) public static void boardCursorQueueAndBorrowedKnife(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:cutting_board","cutting_board");var logic=new BoardLogic(c);
+        var board=(CuttingBoardBlockEntity)c.blockEntity();var p=h.makeMockPlayer(GameType.SURVIVAL);
+        var recipe=(CuttingBoardRecipe)BoardRecipes.all(c.level()).stream().filter(r -> r.value() instanceof CuttingBoardRecipe && !r.id().getPath().startsWith("stripping/")).findFirst().orElseThrow().value();
+        var raw=recipe.getIngredient().getItems()[0].copyWithCount(3);var rawItem=raw.getItem();p.inventoryMenu.setCarried(raw);
+        logic.onCustomAction(c,p,"place",new CompoundTag());
+        h.assertTrue(p.inventoryMenu.getCarried().isEmpty() && board.getPending().getCount()==3,"Cursor food is placed directly without a parked knife");
+        var tool=BuiltInRegistries.ITEM.stream().map(ItemStack::new).filter(s -> BoardTools.knife(s) && s.isDamageableItem()).findFirst().orElseThrow();
+        p.inventoryMenu.setCarried(tool.copy());
+        int required=CuttingBoardBlockEntity.requiredChops(tool,recipe);
+        for(int i=0;i<required;i++)h.runAtTickTime(1+i*5,()->{
+            var tag=new CompoundTag();tag.putInt("mark",board.getPendingChops());tag.putFloat("x",6);tag.putFloat("z",8);logic.onCustomAction(c,p,"chop",tag);
+        });
+        h.runAtTickTime(required*5+5,()->{
+            h.assertTrue(board.getPending().getCount()==2,"One finished cut consumes exactly one queued ingredient");
+            h.assertTrue(board.getKnife().isEmpty() && p.inventoryMenu.getCarried().getDamageValue()==tool.getDamageValue()+1,"Borrowed cursor knife returns with native wear");
+            var saved=board.saveWithoutMetadata(c.level().registryAccess());
+            var restored=new CuttingBoardBlockEntity(c.pos(),c.blockState());restored.loadWithComponents(saved,c.level().registryAccess());
+            h.assertTrue(restored.getPending().getCount()==2 && restored.getPendingChops()==0,"Queue persists in native NBT");
+            logic.onCustomAction(c,p,"take",new CompoundTag());
+            h.assertTrue(!board.isCutting() && p.getInventory().countItem(rawItem)==2,"Taking a queue returns the two remaining inputs");h.succeed();
+        });
+    }
+    @GameTest(template="empty") public static void boardCarvedKnifeAndFullOutput(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:cutting_board","cutting_board");var logic=new BoardLogic(c);
+        var board=(CuttingBoardBlockEntity)c.blockEntity();var p=h.makeMockPlayer(GameType.SURVIVAL);
+        var knife=BuiltInRegistries.ITEM.stream().map(ItemStack::new).filter(BoardTools::knife).findFirst().orElseThrow();
+        p.inventoryMenu.setCarried(knife.copy());logic.onCustomAction(c,p,"carve",new CompoundTag());
+        h.assertTrue(board.hasKnife() && p.inventoryMenu.getCarried().isEmpty(),"Knife can be stuck in an empty board");
+        var saved=board.saveWithoutMetadata(c.level().registryAccess());var restored=new CuttingBoardBlockEntity(c.pos(),c.blockState());restored.loadWithComponents(saved,c.level().registryAccess());
+        h.assertTrue(ItemStack.matches(restored.getKnife(),knife),"Carved knife survives native save/load");
+        var recipe=(CuttingBoardRecipe)BoardRecipes.all(c.level()).stream().filter(r -> r.value() instanceof CuttingBoardRecipe && !r.id().getPath().startsWith("stripping/")).findFirst().orElseThrow().value();
+        p.inventoryMenu.setCarried(recipe.getIngredient().getItems()[0].copyWithCount(2));logic.onCustomAction(c,p,"place",new CompoundTag());
+        for(int i=0;i<8;i++)c.state().setItem(SlotRef.of("result",i),new ItemStack(Items.BEDROCK,64));
+        var tag=new CompoundTag();tag.putInt("mark",0);tag.putFloat("x",6);tag.putFloat("z",8);logic.onCustomAction(c,p,"chop",tag);
+        h.assertTrue(board.getPendingChops()==0 && board.getPending().getCount()==2,"A full output cannot consume queued food or tool durability");h.succeed();
+    }
+    @GameTest(template="empty") public static void boardCakeReturnsBuckets(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:cutting_board","cutting_board");var logic=new BoardLogic(c);var p=h.makeMockPlayer(GameType.SURVIVAL);
+        var cake=BoardRecipes.all(c.level()).stream().filter(r -> r.value() instanceof CraftingRecipe && r.value().getResultItem(c.level().registryAccess()).is(Items.CAKE)).findFirst().orElseThrow();
+        for(var ingredient:BoardDishes.needs(cake.value()))p.getInventory().add(ingredient.getItems()[0].copyWithCount(1));
+        logic.onCustomAction(c,p,"fill",fill(cake));logic.onCustomAction(c,p,"assemble",new CompoundTag());
+        h.assertTrue(Arrays.stream(c.state().getItems("result")).filter(s -> s.is(Items.CAKE)).mapToInt(ItemStack::getCount).sum()==1,"Native cake recipe assembles on the board");
+        h.assertTrue(Arrays.stream(c.state().getItems("result")).filter(s -> s.is(Items.BUCKET)).mapToInt(ItemStack::getCount).sum()==3,"All three milk buckets are returned");h.succeed();
+    }
+    @GameTest(template="empty") public static void cookingDurationsAndCameraDirections(GameTestHelper h){
+        h.assertTrue(CookingPotBlockEntity.getMaxCookingTime()==700 && RoasterBlockEntity.getMaxRoastingTime()==700,"45 seconds changed to 35 seconds in native timers");
+        var board=Diegesis.stationType(StirAndCharm.BOARD).orElseThrow();
+        var mincer=Diegesis.stationType(StirAndCharm.id("mincer")).orElseThrow();
+        var oven=Diegesis.stationType(StirAndCharm.id("stove")).orElseThrow();
+        h.assertTrue(board.orientation()==StationType.Orientation.BLOCK && mincer.orientation()==StationType.Orientation.PLAYER,"Board keeps world alignment while approach glances supply its camera");
+        h.assertTrue(oven.orientation()==StationType.Orientation.BLOCK,"Oven keeps a fixed front view");h.succeed();
+    }
+    @GameTest(template="empty") public static void candlelightOpenPotAndSoupWithoutStirring(GameTestHelper h){
+        if(!net.neoforged.fml.ModList.get().isLoaded("candlelight")){h.succeed();return;}
+        var c=setup(h,"candlelight:cooking_pot","candlelight_pot");var logic=new KitchenLogic(c,false);var p=h.makeMockPlayer(GameType.SURVIVAL);
+        logic.onOpen(c,p);h.assertTrue(!c.blockState().hasProperty(RoasterLid.OPEN),"Candlelight pot has no lid mechanic");
+        ((CookingPotBlockEntity)c.blockEntity()).setItem(0,new ItemStack(Items.WATER_BUCKET));logic.tick(c);
+        h.assertTrue(c.state().getTank("broth").amount()>0 && c.state().getControl("spoon_x")==0,"Liquid is present before the first stirring input");
+        h.succeed();
+    }
+    @GameTest(template="empty",timeoutTicks=200) public static void bakeryJamUsesNativeStirringAndBottles(GameTestHelper h){
+        if(net.neoforged.fml.ModList.get().isLoaded("bakery"))BakeryChecks.run(h);else h.succeed();
+    }
+    // Reflection used by the GameTest registrar must not load optional classes on a core-only server.
+    private static class BakeryChecks {
+        static void run(GameTestHelper h){
+        var c=setup(h,"bakery:small_cooking_pot","jam_pot");var logic=new JamLogic(c);var p=h.makeMockPlayer(GameType.SURVIVAL);
+        var pot=(net.satisfy.bakery.core.block.entity.SmallCookingPotBlockEntity)c.blockEntity();
+        var recipe=JamLogic.recipes(c.level()).stream().filter(r -> r.value().getIngredients().stream().allMatch(i -> i.getItems().length>0)).findFirst().orElseThrow();
+        for(var ingredient:recipe.value().getIngredients())p.getInventory().add(ingredient.getItems()[0].copyWithCount(1));
+        logic.onCustomAction(c,p,"fill",fill(recipe));
+        h.assertTrue(pot.isCooking(),"Recipe book starts a native Bakery recipe");
+        c.level().setBlockAndUpdate(c.pos().below(),Blocks.AIR.defaultBlockState());int start=pot.getTimer();
+        net.satisfy.bakery.core.block.entity.SmallCookingPotBlockEntity.serverTick(c.level(),c.pos(),c.blockState(),pot);
+        h.assertTrue(pot.getTimer()==start,"Jam cannot cook without heat");
+        c.level().setBlockAndUpdate(c.pos().below(),Blocks.CAMPFIRE.defaultBlockState());
+        for(int i=0;i<160;i++)net.satisfy.bakery.core.block.entity.SmallCookingPotBlockEntity.serverTick(c.level(),c.pos(),c.blockState(),pot);
+        h.assertTrue(pot.isStirDue(),"The native jam requires stirring after 160 cooking ticks");
+        logic.tick(c);h.assertTrue(pot.isStirDue(),"Opening the scene cannot stir automatically");
+        var first=new CompoundTag();first.putFloat("x",2);first.putFloat("z",0);logic.onCustomAction(c,p,"stir",first);
+        h.runAtTickTime(2,()->{
+            var next=new CompoundTag();next.putFloat("x",1.8F);next.putFloat("z",.8F);logic.onCustomAction(c,p,"stir",next);
+            h.assertTrue(!pot.isStirDue(),"Real validated mouse motion clears the native stirring requirement");
+            int remaining=pot.getCookingTime()-pot.getTimer();
+            for(int i=0;i<remaining;i++){net.satisfy.bakery.core.block.entity.SmallCookingPotBlockEntity.serverTick(c.level(),c.pos(),c.blockState(),pot);if(pot.isStirDue())pot.stir();}
+            h.assertTrue(pot.canBottle(),"Native recipe reaches bottling stage");
+            var jar=new ItemStack(net.satisfy.bakery.core.registry.ObjectRegistry.JAR.get());p.inventoryMenu.setCarried(jar);
+            logic.onCustomAction(c,p,"place",new CompoundTag());
+            h.assertTrue(p.inventoryMenu.getCarried().isEmpty(),"Bottling consumes one empty jar");
+            h.assertTrue(p.getInventory().items.stream().anyMatch(s -> s.is(recipe.value().getResult().getItem())),"Native filled jam and its components are given to the player");h.succeed();
+        });
+        }
+    }
+    @GameTest(template="empty") public static void potNativeTimingHeatAndServing(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:cooking_pot","cooking_pot");var pot=(CookingPotBlockEntity)c.blockEntity();
+        var holder=KitchenRecipes.all(c.level(),false).stream().filter(r -> r.value() instanceof CookingPotRecipe p && !p.requiresLearning() && p.isContainerRequired()
+            && p.getIngredients().stream().allMatch(i -> !i.isEmpty() && i.getItems().length>0)).findFirst().orElseThrow();
+        int slot=0;for(var ingredient:holder.value().getIngredients())pot.setItem(slot++,ingredient.getItems()[0].copyWithCount(1));
+        c.level().setBlockAndUpdate(c.pos().below(),Blocks.AIR.defaultBlockState());
+        for(int i=0;i<20;i++)pot.tick(c.level(),c.pos(),c.blockState(),pot);
+        h.assertTrue(((ru.codex.stirandcharm.mixin.CookingPotAccess)pot).stirandcharm$cookingTime()==0,"No heat means no cooking progress");
+        c.level().setBlockAndUpdate(c.pos().below(),Blocks.REDSTONE_BLOCK.defaultBlockState());
+        for(int i=0;i<699;i++)pot.tick(c.level(),c.pos(),c.blockState(),pot);
+        h.assertTrue(pot.getItem(7).isEmpty(),"Cooking does not finish before 35 seconds");
+        pot.tick(c.level(),c.pos(),c.blockState(),pot);h.assertTrue(!pot.getItem(7).isEmpty(),"Native recipe finishes at exactly 700 ticks without stirring or an empty bowl");
+        h.assertTrue(pot.removeItem(7,1).isEmpty(),"A serving cannot leave without its required container");
+        int ready=pot.getItem(7).getCount();pot.setItem(6,KitchenRecipes.dish(holder.value()).copyWithCount(1));
+        var serving=pot.removeItem(7,1);h.assertTrue(serving.getCount()==1 && pot.getItem(6).isEmpty() && pot.getItem(7).getCount()==ready-1,"One serving consumes exactly one real container");
+        var c2=setup(h,"farm_and_charm:cooking_pot","cooking_pot");var boosted=(CookingPotBlockEntity)c2.blockEntity();
+        slot=0;for(var ingredient:holder.value().getIngredients())boosted.setItem(slot++,ingredient.getItems()[0].copyWithCount(1));
+        ((PotStirring)boosted).handily$stirred(c2.level().getGameTime());int ticks=0;
+        while(boosted.getItem(7).isEmpty() && ticks<700){boosted.tick(c2.level(),c2.pos(),c2.blockState(),boosted);ticks++;}
+        h.assertTrue(ticks>=466 && ticks<=468,"Real stirring boost caps cooking at approximately 1.5x speed");h.succeed();
     }
 }

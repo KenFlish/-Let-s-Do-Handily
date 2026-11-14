@@ -89,7 +89,8 @@
         "size": 3,
         "item_size": 2.6,
         "display": "hidden",
-        "counts": "hover"
+        "counts": "hover",
+        "highlight": false
       }
     },
     {

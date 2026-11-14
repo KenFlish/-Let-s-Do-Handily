@@ -48,7 +48,7 @@ public final class KitchenBehavior implements StationBehavior {
         }
     }
     @Override public void frame(StationView view, float delta) {
-        view.setCarriedHidden(true);
+        view.setCarriedHidden(false);
         view.node("result").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
         view.node("containers").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
         if (!bowl) {
@@ -73,7 +73,7 @@ public final class KitchenBehavior implements StationBehavior {
             });
             // Rotate the actual spoon from the installed pot model, as the native bowl rotates its whisk.
             spoonAngle += (spoonTarget-spoonAngle)*(1-(float)Math.exp(-delta*18));
-            view.node("spoon").ifPresent(n -> n.rotateTo(0, spoonAngle, 0, 0));
+            view.node("spoon").ifPresent(n -> n.rotateTo(0, view.state().getControl("lid_open")>.5F?spoonAngle:0, 0, 0));
             soup.frame(view, delta);
         }
         book.frame(view, delta);

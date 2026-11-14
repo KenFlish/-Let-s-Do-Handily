@@ -11,7 +11,10 @@ import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.*;
 import ru.codex.stirandcharm.RoasterLid;
 @Mixin(RoasterBlock.class)
-public abstract class RoasterLidBlock {
+public abstract class RoasterLidBlock extends net.minecraft.world.level.block.BaseEntityBlock {
+    protected RoasterLidBlock(net.minecraft.world.level.block.state.BlockBehaviour.Properties p){super(p);}
+    @Inject(method="<init>",at=@At("TAIL"),remap=false)
+    private void handily$closedDefault(net.minecraft.world.level.block.state.BlockBehaviour.Properties p,CallbackInfo ci){registerDefaultState(defaultBlockState().setValue(RoasterLid.OPEN,false));}
     @Inject(method="createBlockStateDefinition", at=@At("TAIL"), remap=false)
     private void handily$property(StateDefinition.Builder<Block, BlockState> builder, CallbackInfo ci) { builder.add(RoasterLid.OPEN); }
     @Inject(method="getShape", at=@At("HEAD"), cancellable=true, remap=false)

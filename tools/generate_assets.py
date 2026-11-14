@@ -4,6 +4,23 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1] / 'src/main/resources/assets/handson_farm_charm'
 
+def approach(scene):
+    import math
+    camera = scene['camera']
+    x,y,z = camera['position']
+    camera['glances'] = []
+    for turn in range(4):
+        a = math.radians(-turn*90)
+        camera['glances'].append({'id':f'approach_{turn}',
+            'position':[8+(x-8)*math.cos(a)+(z-8)*math.sin(a), y, 8-(x-8)*math.sin(a)+(z-8)*math.cos(a)],
+            'target':camera['target'], 'time':.25, 'back_on_take':False, 'back_zone':0, 'hint':False})
+    ui=[]
+    for node in scene['nodes']:
+        if node['id'] in ('book_open','result','containers') or node['id'].startswith('result_'):
+            node['pos'][0]-=8;node['pos'][2]-=8;ui.append(node)
+    scene['nodes']=[n for n in scene['nodes'] if n not in ui]+[{'id':'approach_ui','pos':[8,0,8],'pickable':False,'children':ui}]
+    return scene
+
 def write(path, data):
     p = ROOT / path
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -82,15 +99,16 @@ for kind, count in [('mincer', 1), ('stove', 3), ('roaster', 6)]:
                   {'id': 'lid', 'pos': [8, 6, 12],
                    'collider': {'from': [-5.2, -.2, -8.2], 'to': [5.2, 2.3, .3]},
                    'tooltip': 'handson_farm_charm.lid'}]
-        positions = [[4.5 + i % 3 * 3.5, 4.5, 6 if i < 3 else 10] for i in range(6)]
-        nodes.append({'id': 'containers', 'pos': [-3, 4, 8], 'slot': {'slot': 'containers[0]', 'size': 3.5},
+        positions = [[5.2,1.3,6.2],[9.8,1.4,8.4],[6.9,1.7,10.1],[10.1,2,5.8],[4.9,2.2,9.9],[8,2.45,7.6]]
+        nodes.append({'id': 'containers', 'pos': [-3, 4, 8], 'slot': {'slot': 'containers[0]', 'size': 3.5, 'highlight': False},
                       'tooltip': 'handson_farm_charm.containers'})
     for i, position in enumerate(positions):
         nodes.append({'id': f'ingredient_{i}', 'pos': position,
                       'collider': {'from': [-1.5, 0, -1.5], 'to': [1.5, 1, 1.5]},
                       'slot': {'slot': f'ingredients[{i}]', 'size': 3, 'item_size': 2.6,
-                               'display': 'hidden' if kind == 'mincer' else 'flat', 'counts': 'hover'}})
+                               'display': 'hidden' if kind in ('mincer','roaster') else 'flat', 'counts': 'hover', 'highlight': False}})
         if kind == 'stove': nodes[-1]['rotation'] = [-90,0,0]
+        if kind == 'roaster': nodes[-1]['rotation'] = [0,[-24,19,66,-48,32,-12][i],0]
     # Only ingredients accept a group drop. Tools, the book, fuel, and output have separate hit zones.
     if kind != 'stove':
         nodes.append({'id': 'mouth', 'drop_zone': 'ingredients',
@@ -105,7 +123,7 @@ for kind, count in [('mincer', 1), ('stove', 3), ('roaster', 6)]:
             if n['id'] == 'result': n['pos'] = [-5, 11, -3]; n['rotation'] = [-85,0,0]
             if n['id'] == 'book_open': n['pos'] = [21, 11, -4]; n['rotation'] = [-85,0,0]
     appliance['nodes'] = nodes
-    write(f'diegesis/scenes/{kind}.json', appliance)
+    write(f'diegesis/scenes/{kind}.json', approach(appliance) if kind=='roaster' else appliance)
 
 # The native board renderer supplies the knife, chopping animation and assembly layers.
 board = deepcopy(scene)
@@ -114,25 +132,20 @@ board['work_plane'] = 4
 board['nodes'] = [deepcopy(n) for n in scene['nodes'] if n['id'] == 'book_open']
 board['nodes'][0]['pos'] = [15.5, 15.72, -4]
 board['nodes'] += [
-    {'id': 'knife', 'pos': [-3, 3, 7], 'slot': {'slot': 'knife[0]', 'size': 3.5}, 'tooltip': 'handson_farm_charm.board.knife'},
-    {'id': 'pending', 'drop_zone': 'pending', 'collider': {'from': [1, 0, 3], 'to': [11, 5.2, 13]}},
     {'id': 'surface', 'collider': {'from': [1, 0, 3], 'to': [11, 5, 13]}, 'tooltip': 'handson_farm_charm.board.surface'},
+    {'id': 'carved', 'pos': [6, 3.5, 8], 'rotation': [0, 25, -147], 'scale': .5, 'pickable': False},
     {'id': 'food', 'pos': [6, 1.05, 8], 'pickable': False},
     {'id': 'marks', 'pos': [6, 1.05, 8], 'pickable': False},
     {'id': 'knife_turn', 'pos': [6, 1, 8], 'pickable': False, 'children': [
         {'id': 'knife_model', 'rotation': [20, 0, -135], 'scale': .45, 'pickable': False}]},
-    {'id': 'mouth', 'drop_zone': 'ingredients', 'collider': {'from': [1, .6, 3], 'to': [11, 1, 13]}},
-    {'id': 'assemble', 'pos': [6, 3, 15], 'scale': .2,
-     'visual': {'item': 'minecraft:crafting_table', 'anchor': [8, 8, 8]},
-     'collider': {'from': [-8, -8, -8], 'to': [8, 8, 8]}, 'tooltip': 'handson_farm_charm.board.assemble'},
 ]
-for i in range(5):
+for i in range(9):
     board['nodes'].append({'id': f'layer_{i}', 'pos': [6, 1.12 + i * .65, 8], 'pickable': False})
 for i in range(8):
     board['nodes'].append({'id': f'result_{i}', 'pos': [-5 - i % 2 * 4, 8 - i // 2 * 3, -2], 'rotation': [-50, 0, 0],
-                           'slot': {'slot': f'result[{i}]', 'size': 3.5, 'display': 'flat', 'counts': 'always'},
+                           'slot': {'slot': f'result[{i}]', 'size': 3.5, 'display': 'flat', 'counts': 'always', 'highlight': False},
                            'tooltip': 'handson_farm_charm.result'})
-write('diegesis/scenes/cutting_board.json', board)
+write('diegesis/scenes/cutting_board.json', approach(board))
 
 pot = json.loads((ROOT / 'diegesis/scenes/cooking_pot.json').read_text(encoding='utf-8'))
 for n in pot['nodes']:
@@ -145,11 +158,26 @@ write('diegesis/scenes/candlelight_pot.json', pot)
 pan = json.loads((ROOT / 'diegesis/scenes/roaster.json').read_text(encoding='utf-8'))
 pan['nodes'] = [n for n in pan['nodes'] if n['id'] not in ('roaster_body', 'lid')]
 for n in pan['nodes']:
-    if n['id'].startswith('ingredient_'): n['pos'][1] = 3.2
+    if n['id'].startswith('ingredient_'): n['pos'][1] += 1.1
     if n['id'] == 'mouth': n['collider'] = {'from': [3, 2.2, 3], 'to': [13, 3, 13]}
 write('diegesis/scenes/candlelight_pan.json', pan)
+jam=deepcopy(scene)
+jam['nodes']=[deepcopy(n) for n in scene['nodes'] if n['id']=='book_open']+[
+    {'id':'mouth','collider':{'from':[4.5,3,4.5],'to':[11.5,7,11.5]}},
+    {'id':'stir_handle','strokes':True,'collider':{'from':[5.5,8,5.5],'to':[10.5,16,10.5]},'tooltip':'handson_farm_charm.jam.stir'},
+    {'id':'result','pos':[-1,16,-1],'rotation':[-50,0,0],'collider':{'from':[-2.3,-.5,-2.3],'to':[2.3,.7,2.3]}},
+    {'id':'dump','pos':[-3,3,8],'scale':.14,'visual':{'item':'minecraft:bucket','anchor':[8,8,8]},
+        'collider':{'from':[-8,-2,-8],'to':[8,4,8]},'tooltip':'handson_farm_charm.jam.dump'}]
+jam['captions']={'edge':'top','background':'#70000000'}
+write('diegesis/scenes/jam_pot.json',jam)
 en = {
-    'board.cut': 'Place a knife or cleaver, then cut along the dashed marks',
+    'pot_lid': 'Open / close the lid',
+    'board.book_all': 'All recipes', 'board.book_tools': 'Axe work',
+    'jam.stir': 'Stir with circular mouse movements',
+    'jam.stir_due': 'Stir the jam!', 'jam.cooking': 'Jam: %s%%',
+    'jam.burnt': 'Burnt jam — empty the pot', 'jam.bottle': 'Fill a jam jar',
+    'jam.dump': 'Empty pot — a cooking batch will be discarded',
+    'board.cut': 'Use a knife or cleaver to cut along the dashed marks',
     'board.surface': 'Left: cut / assemble. Right: take',
     'board.book_cut': 'Knife / cleaver',
     'board.book_assembly': 'Assemble',
@@ -171,10 +199,16 @@ en = {
     'fill_failed': 'Cannot add this recipe: check ingredients, free space and the lid.',
     'serving_failed': 'A matching serving container and free inventory space are required',
     'serve_with': '%s — serve with: %s',
-    'book.pot_time': '30–45 s',
+    'book.pot_time': '23–35 s',
     'next': 'Next page', 'prev': 'Previous page',
 }
 ru = {
+    'pot_lid': 'Открыть / закрыть крышку',
+    'board.book_all': 'Все рецепты', 'board.book_tools': 'Работа топором',
+    'jam.stir': 'Вращайте венчик мышью',
+    'jam.stir_due': 'Пора помешать варенье!', 'jam.cooking': 'Варенье: %s%%',
+    'jam.burnt': 'Варенье сгорело — очистите кастрюлю', 'jam.bottle': 'Наполнить банку вареньем',
+    'jam.dump': 'Очистить кастрюлю — готовящееся варенье пропадёт',
     'board.cut': 'Положите нож или тесак и режьте по пунктирным отметкам',
     'board.surface': 'ЛКМ: резать / собрать. ПКМ: забрать',
     'board.book_cut': 'Нож / тесак',
@@ -198,7 +232,7 @@ ru = {
     'fill_failed': 'Не удалось добавить рецепт: проверьте ингредиенты, свободное место и крышку.',
     'serving_failed': 'Для получения нужны подходящая посуда и свободное место',
     'serve_with': '%s — для подачи: %s',
-    'book.pot_time': '30–45 с',
+    'book.pot_time': '23–35 с',
     'next': 'Следующая страница', 'prev': 'Предыдущая страница',
 }
 for lang, messages in [('en_us', en), ('ru_ru', ru)]:

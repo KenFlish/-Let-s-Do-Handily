@@ -15,7 +15,77 @@
     "fov": 30,
     "neighbors": {
       "enabled": false
-    }
+    },
+    "glances": [
+      {
+        "id": "approach_0",
+        "position": [
+          8.0,
+          41,
+          -21.0
+        ],
+        "target": [
+          8,
+          6.5,
+          8
+        ],
+        "time": 0.25,
+        "back_on_take": false,
+        "back_zone": 0,
+        "hint": false
+      },
+      {
+        "id": "approach_1",
+        "position": [
+          37.0,
+          41,
+          7.999999999999998
+        ],
+        "target": [
+          8,
+          6.5,
+          8
+        ],
+        "time": 0.25,
+        "back_on_take": false,
+        "back_zone": 0,
+        "hint": false
+      },
+      {
+        "id": "approach_2",
+        "position": [
+          8.000000000000004,
+          41,
+          37.0
+        ],
+        "target": [
+          8,
+          6.5,
+          8
+        ],
+        "time": 0.25,
+        "back_on_take": false,
+        "back_zone": 0,
+        "hint": false
+      },
+      {
+        "id": "approach_3",
+        "position": [
+          -21.0,
+          41,
+          8.000000000000005
+        ],
+        "target": [
+          8,
+          6.5,
+          8
+        ],
+        "time": 0.25,
+        "back_on_take": false,
+        "back_zone": 0,
+        "hint": false
+      }
+    ]
   },
   "interface": {
     "hide_player": true,
@@ -60,24 +130,11 @@
       "tooltip": "handson_farm_charm.lid"
     },
     {
-      "id": "containers",
-      "pos": [
-        -3,
-        4,
-        8
-      ],
-      "slot": {
-        "slot": "containers[0]",
-        "size": 3.5
-      },
-      "tooltip": "handson_farm_charm.containers"
-    },
-    {
       "id": "ingredient_0",
       "pos": [
-        4.5,
-        4.5,
-        6
+        5.2,
+        1.3,
+        6.2
       ],
       "collider": {
         "from": [
@@ -95,16 +152,22 @@
         "slot": "ingredients[0]",
         "size": 3,
         "item_size": 2.6,
-        "display": "flat",
-        "counts": "hover"
-      }
+        "display": "hidden",
+        "counts": "hover",
+        "highlight": false
+      },
+      "rotation": [
+        0,
+        -24,
+        0
+      ]
     },
     {
       "id": "ingredient_1",
       "pos": [
-        8.0,
-        4.5,
-        6
+        9.8,
+        1.4,
+        8.4
       ],
       "collider": {
         "from": [
@@ -122,16 +185,22 @@
         "slot": "ingredients[1]",
         "size": 3,
         "item_size": 2.6,
-        "display": "flat",
-        "counts": "hover"
-      }
+        "display": "hidden",
+        "counts": "hover",
+        "highlight": false
+      },
+      "rotation": [
+        0,
+        19,
+        0
+      ]
     },
     {
       "id": "ingredient_2",
       "pos": [
-        11.5,
-        4.5,
-        6
+        6.9,
+        1.7,
+        10.1
       ],
       "collider": {
         "from": [
@@ -149,16 +218,22 @@
         "slot": "ingredients[2]",
         "size": 3,
         "item_size": 2.6,
-        "display": "flat",
-        "counts": "hover"
-      }
+        "display": "hidden",
+        "counts": "hover",
+        "highlight": false
+      },
+      "rotation": [
+        0,
+        66,
+        0
+      ]
     },
     {
       "id": "ingredient_3",
       "pos": [
-        4.5,
-        4.5,
-        10
+        10.1,
+        2,
+        5.8
       ],
       "collider": {
         "from": [
@@ -176,16 +251,22 @@
         "slot": "ingredients[3]",
         "size": 3,
         "item_size": 2.6,
-        "display": "flat",
-        "counts": "hover"
-      }
+        "display": "hidden",
+        "counts": "hover",
+        "highlight": false
+      },
+      "rotation": [
+        0,
+        -48,
+        0
+      ]
     },
     {
       "id": "ingredient_4",
       "pos": [
-        8.0,
-        4.5,
-        10
+        4.9,
+        2.2,
+        9.9
       ],
       "collider": {
         "from": [
@@ -203,16 +284,22 @@
         "slot": "ingredients[4]",
         "size": 3,
         "item_size": 2.6,
-        "display": "flat",
-        "counts": "hover"
-      }
+        "display": "hidden",
+        "counts": "hover",
+        "highlight": false
+      },
+      "rotation": [
+        0,
+        32,
+        0
+      ]
     },
     {
       "id": "ingredient_5",
       "pos": [
-        11.5,
-        4.5,
-        10
+        8,
+        2.45,
+        7.6
       ],
       "collider": {
         "from": [
@@ -230,9 +317,15 @@
         "slot": "ingredients[5]",
         "size": 3,
         "item_size": 2.6,
-        "display": "flat",
-        "counts": "hover"
-      }
+        "display": "hidden",
+        "counts": "hover",
+        "highlight": false
+      },
+      "rotation": [
+        0,
+        -12,
+        0
+      ]
     },
     {
       "id": "mouth",
@@ -251,57 +344,82 @@
       }
     },
     {
-      "id": "result",
+      "id": "approach_ui",
       "pos": [
-        -1,
-        16,
-        -1
-      ],
-      "rotation": [
-        -50,
+        8,
         0,
-        0
+        8
       ],
-      "tooltip": "handson_farm_charm.result",
-      "collider": {
-        "from": [
-          -2.3,
-          -0.5,
-          -2.3
-        ],
-        "to": [
-          2.3,
-          0.7,
-          2.3
-        ]
-      }
-    },
-    {
-      "id": "book_open",
-      "pos": [
-        16.33,
-        21.22,
-        -4
-      ],
-      "rotation": [
-        -50,
-        0,
-        0
-      ],
-      "scale": 0.69,
-      "hidden": true,
-      "collider": {
-        "from": [
-          -4.4,
-          -0.4,
-          -3.9
-        ],
-        "to": [
-          4.4,
-          1.4,
-          3.9
-        ]
-      }
+      "pickable": false,
+      "children": [
+        {
+          "id": "containers",
+          "pos": [
+            -11,
+            4,
+            0
+          ],
+          "slot": {
+            "slot": "containers[0]",
+            "size": 3.5,
+            "highlight": false
+          },
+          "tooltip": "handson_farm_charm.containers"
+        },
+        {
+          "id": "result",
+          "pos": [
+            -9,
+            16,
+            -9
+          ],
+          "rotation": [
+            -50,
+            0,
+            0
+          ],
+          "tooltip": "handson_farm_charm.result",
+          "collider": {
+            "from": [
+              -2.3,
+              -0.5,
+              -2.3
+            ],
+            "to": [
+              2.3,
+              0.7,
+              2.3
+            ]
+          }
+        },
+        {
+          "id": "book_open",
+          "pos": [
+            8.329999999999998,
+            21.22,
+            -12
+          ],
+          "rotation": [
+            -50,
+            0,
+            0
+          ],
+          "scale": 0.69,
+          "hidden": true,
+          "collider": {
+            "from": [
+              -4.4,
+              -0.4,
+              -3.9
+            ],
+            "to": [
+              4.4,
+              1.4,
+              3.9
+            ]
+          }
+        }
+      ]
     }
   ]
 }

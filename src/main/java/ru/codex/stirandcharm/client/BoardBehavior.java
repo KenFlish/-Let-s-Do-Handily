@@ -9,7 +9,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.sounds.SoundEvents;
 import org.joml.Vector3f;
-import ru.codex.stirandcharm.BoardTools;
+import ru.codex.stirandcharm.*;
+import net.minecraft.client.Minecraft;
+import net.satisfy.farm_and_charm.core.block.entity.CuttingBoardBlockEntity;
 
 /** Pixel pieces and a knife following the pointer, adapted to the native Farm & Charm board. */
 final class BoardBehavior implements StationBehavior {
@@ -19,23 +21,35 @@ final class BoardBehavior implements StationBehavior {
     private float knifeX=6,knifeZ=8,chopAge=1;
     private ItemStack shownKnife=ItemStack.EMPTY;
     public void onSceneReady(StationView view) {view.node("book_open").ifPresent(n -> n.setPainter(book));}
-    public void onOpen(StationView view) {view.setInventoryFilter(null);book.opened(view);}
+    public void onOpen(StationView view) {
+        view.setInventoryFilter(null);ApproachCamera.open(view);book.opened(view);
+        var player=Minecraft.getInstance().player;
+        if(view.openedByUse() && player!=null && !BoardTools.canStick(player.getMainHandItem())) {
+            var tag=new CompoundTag();tag.putInt("from",player.getInventory().selected);tag.putBoolean("one",false);view.sendAction("place",tag);
+        }
+    }
     public void onClose(StationView view) {book.shut(view);}
     public void frame(StationView view,float dt) {
-        view.setCarriedHidden(true);chopAge+=dt;
-        ItemStack tool=view.state().getItems("knife")[0];
-        boolean knife=!tool.isEmpty(), focused=view.isFocused();
+        ApproachCamera.keep(view);
+        var results=view.state().getItems("result");
+        for(int i=0;i<results.length;i++){boolean present=!results[i].isEmpty();view.node("result_"+i).ifPresent(n -> {n.setVisible(view.isFocused() && present);n.setEnabled(view.isFocused() && present);});}
+        chopAge+=dt;
+        ItemStack parked=view.state().getItems("knife")[0];
         ItemStack pending=view.state().getItems("pending")[0];
-        int chops=(int)view.state().getControl("chops"),total=(int)view.state().getControl("required");
-        view.node("pending").ifPresent(n -> {n.setVisible(focused && knife);n.setEnabled(focused && knife);});
-        view.node("mouth").ifPresent(n -> {n.setVisible(focused && !knife);n.setEnabled(focused && !knife);});
+        ItemStack tool=tool(view);
+        boolean knife=!tool.isEmpty(), focused=view.isFocused();
+        var player=Minecraft.getInstance().player;
+        view.setCarriedHidden(player!=null && !pending.isEmpty() && BoardTools.supports(player.inventoryMenu.getCarried(),pending));
+        int chops=(int)view.state().getControl("chops"),total=required(view,tool);
         view.node("surface").ifPresent(n -> {n.setVisible(focused);n.setEnabled(focused);});
-        view.node("assemble").ifPresent(n -> {n.setVisible(focused && !knife);n.setEnabled(focused && !knife);});
+        view.node("mouth").ifPresent(n -> {n.setVisible(focused);n.setEnabled(focused);});
+        boolean carved=!parked.isEmpty() && pending.isEmpty();
+        view.node("carved").ifPresent(n -> {n.setVisible(view.isInUse() && carved);if(carved)n.setVisual(Visual.ofItem(parked.getItem()).withAnchor(new Vector3f(8,8,8)));});
         var cuts=new ArrayList<ItemVoxels.Cut>();
         for(int i=0;i<Math.min(chops,32);i++) cuts.add(line(pending,i,total));
         mesh(view,"food",pending,BoardTools.ITEM_SIZE,cuts,chops);
         var layers=view.state().getItems("ingredients");
-        for(int i=0;i<5;i++) mesh(view,"layer_"+i,layers[i],8,List.of(),0);
+        for(int i=0;i<9;i++) mesh(view,"layer_"+i,layers[i],8,List.of(),0);
         ItemVoxels.Cut target=line(pending,chops,total);
         view.node("marks").ifPresent(n -> {
             n.setVisible(focused && !pending.isEmpty());
@@ -67,10 +81,25 @@ final class BoardBehavior implements StationBehavior {
             view.node("knife_model").ifPresent(n -> {if(!tool.isEmpty())n.setVisual(Visual.ofItem(tool.getItem()).withAnchor(new Vector3f(8,8,8)));});
         }
         float dip=chopAge<.2F ? (float)Math.sin(chopAge/.2F*Math.PI)*2.5F : 0;
-        view.node("knife_turn").ifPresent(n -> {n.setVisible(view.isInUse() && knife);n.moveTo(knifeX-BoardTools.CENTER_X,3-dip,knifeZ-BoardTools.CENTER_Z,0);n.rotateTo(0,-(float)Math.toDegrees(target.angle()),0,0);});
+        view.node("knife_turn").ifPresent(n -> {n.setVisible(view.isInUse() && knife && !pending.isEmpty());n.moveTo(knifeX-BoardTools.CENTER_X,3-dip,knifeZ-BoardTools.CENTER_Z,0);n.rotateTo(0,-(float)Math.toDegrees(target.angle()),0,0);});
         book.frame(view,dt);
     }
+    private static ItemStack tool(StationView view) {
+        var food=view.state().getItems("pending")[0];var parked=view.state().getItems("knife")[0];
+        if(food.isEmpty())return ItemStack.EMPTY;
+        if(BoardTools.supports(parked,food))return parked;
+        var p=Minecraft.getInstance().player;if(p==null)return ItemStack.EMPTY;
+        if(BoardTools.supports(p.inventoryMenu.getCarried(),food))return p.inventoryMenu.getCarried();
+        if(BoardTools.supports(p.getMainHandItem(),food))return p.getMainHandItem();
+        for(int i=0;i<p.getInventory().getContainerSize();i++)if(BoardTools.supports(p.getInventory().getItem(i),food))return p.getInventory().getItem(i);
+        return ItemStack.EMPTY;
+    }
+    private static int required(StationView view,ItemStack tool) {
+        return BoardRecipes.cut(view.level(),view.state().getItems("pending")[0])
+            .map(h -> net.satisfy.farm_and_charm.core.util.Strippables.strip(view.state().getItems("pending")[0]).isPresent()?2:CuttingBoardBlockEntity.requiredChops(tool,h.value())).orElse(1);
+    }
     private static ItemVoxels.Cut line(ItemStack item,int mark,int total) {
+        if(item.isEmpty())return new ItemVoxels.Cut(0,0,0);
         var axis=ItemVoxels.icon(item).map(icon -> icon.axis(BoardTools.ITEM_SIZE)).orElse(ItemVoxels.Axis.square(3));
         float[] at=axis.at((mark+1F)/(Math.max(1,total)+1F));
         float lean=(mark%2==0 ? .6F : -.45F)*(axis.elongation()>=1.4F ? .35F : .85F);
@@ -87,20 +116,37 @@ final class BoardBehavior implements StationBehavior {
         });
     }
     public void onEvent(StationView view,SceneEvent event) {
-        if(event instanceof SceneEvent.Click c) {
-            if(c.node().equals("book_open") && c.button()==0) {book.click(view);return;}
-            if(c.node().equals("assemble") && c.button()==0) {view.sendAction("assemble",new CompoundTag());return;}
-            if(!c.node().equals("surface"))return;
-            if(c.button()==1) {view.sendAction("take",new CompoundTag());return;}
-            if(c.button()!=0)return;
-            if(view.state().getItems("pending")[0].isEmpty()) {view.sendAction("assemble",new CompoundTag());return;}
-            chop(view);
+        if(!(event instanceof SceneEvent.Click c))return;
+        if(c.node().equals("book_open")){if(c.button()==0)book.click(view);return;}
+        if(!c.node().equals("surface") && !c.node().equals("mouth"))return;
+        if(!view.state().getItems("knife")[0].isEmpty() && view.state().getItems("pending")[0].isEmpty()) {view.sendAction("take",new CompoundTag());return;}
+        if(c.button()==1){view.sendAction("take",new CompoundTag());return;}
+        if(c.button()!=0)return;
+        if(!view.state().getItems("pending")[0].isEmpty()) {
+            if(!tool(view).isEmpty())chop(view);else view.sendAction("take",new CompoundTag());
+        } else view.sendAction("assemble",new CompoundTag());
+    }
+    public boolean onItemClick(StationView view,String node,ItemStack stack,int button,boolean shift) {
+        if(node.equals("book_open")){if(button==0)book.click(view);return true;}
+        if(!node.equals("surface") && !node.equals("mouth"))return false;
+        boolean empty=view.state().getItems("pending")[0].isEmpty() && Arrays.stream(view.state().getItems("ingredients")).allMatch(ItemStack::isEmpty);
+        if(shift && empty && BoardTools.canStick(stack)){view.sendAction("carve",new CompoundTag());return true;}
+        if(BoardTools.canStick(stack)) {
+            if(button==1)view.putAwayCarried();
+            else if(!tool(view).isEmpty())chop(view);
+            else view.playSound(SoundEvents.WOOD_HIT,"surface",.4F,1.2F);
+            return true;
         }
+        var tag=new CompoundTag();tag.putBoolean("one",button==1);view.sendAction("place",tag);return true;
+    }
+    public boolean onInventoryShiftClick(StationView view,int slot,ItemStack stack) {
+        if(BoardTools.canStick(stack))return false;
+        var tag=new CompoundTag();tag.putInt("from",slot);view.sendAction("place",tag);return true;
     }
     private void chop(StationView view) {
         long now=System.nanoTime();if(now-lastClick<200_000_000L)return;
         var cursor=view.cursorOn(1.1F);if(cursor.isEmpty())return;
-        int mark=(int)view.state().getControl("chops"),total=(int)view.state().getControl("required");
+        int mark=(int)view.state().getControl("chops"),total=required(view,tool(view));
         var p=cursor.get();chopAge=0;lastClick=now;
         if(p.x<1 || p.x>11 || p.z<3 || p.z>13 || Math.abs(line(view.state().getItems("pending")[0],mark,total).distance(p.x-BoardTools.CENTER_X,p.z-BoardTools.CENTER_Z))>1.2F) {view.playSound(SoundEvents.WOOD_HIT,"food",.3F,1.5F);return;}
         var tag=new CompoundTag();tag.putInt("mark",mark);tag.putFloat("x",p.x);tag.putFloat("z",p.z);view.sendAction("chop",tag);

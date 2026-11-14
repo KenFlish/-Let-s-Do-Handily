@@ -21,6 +21,7 @@ public final class ClientSetup {
                 DiegesisClient.registerBehavior(StirAndCharm.id("candlelight_pot"), view -> new KitchenBehavior(false));
                 DiegesisClient.registerBehavior(StirAndCharm.id("candlelight_pan"), view -> new ApplianceBehavior(ru.codex.stirandcharm.Appliance.ROASTER));
             }
+            if(net.neoforged.fml.ModList.get().isLoaded("bakery"))DiegesisClient.registerBehavior(StirAndCharm.JAM,view -> new JamBehavior());
         }));
     }
 }

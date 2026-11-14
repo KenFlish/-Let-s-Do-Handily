@@ -17,6 +17,7 @@ public final class StirAndCharm {
     public static final ResourceLocation POT = id("cooking_pot");
     public static final ResourceLocation BOWL = id("crafting_bowl");
     public static final ResourceLocation BOARD = id("cutting_board");
+    public static final ResourceLocation JAM = id("jam_pot");
     public static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath(ID, path); }
 
     public StirAndCharm(IEventBus bus, ModContainer container) {
@@ -27,9 +28,9 @@ public final class StirAndCharm {
         Diegesis.register(Diegesis.station(BOARD)
             .block(() -> BuiltInRegistries.BLOCK.get(ResourceLocation.parse("farm_and_charm:cutting_board")))
             .schema(StationSchema.builder()
-                .slots("ingredients",5,SlotRules.DEFAULT.kept().maxStack(1))
-                .slots("pending",1,SlotRules.DEFAULT.kept().maxStack(1))
-                .slots("knife",1,SlotRules.DEFAULT.kept().maxStack(1))
+                .slots("ingredients",9,SlotRules.DEFAULT.kept().maxStack(1).accepts(s -> false))
+                .slots("pending",1,SlotRules.DEFAULT.kept().maxStack(16).accepts(s -> false))
+                .slots("knife",1,SlotRules.DEFAULT.kept().maxStack(1).accepts(s -> false))
                 .slots("result",8,SlotRules.DEFAULT.accepts(s -> false))
                 .control("progress",ControlSpec.range(0,1,0).locked())
                 .control("chops",ControlSpec.range(0,1024,0).locked())
@@ -42,6 +43,14 @@ public final class StirAndCharm {
             Diegesis.register(station(id("candlelight_pot"), "candlelight:cooking_pot",6,false));
             Diegesis.register(appliance(Appliance.ROASTER,"candlelight:cooking_pan","candlelight_pan"));
         }
+        if(net.neoforged.fml.ModList.get().isLoaded("bakery"))Diegesis.register(Diegesis.station(JAM)
+            .block(() -> BuiltInRegistries.BLOCK.get(ResourceLocation.parse("bakery:small_cooking_pot")))
+            .schema(StationSchema.builder().slots("ingredients",4,SlotRules.DEFAULT.kept().accepts(s -> false))
+                .control("progress",ControlSpec.range(0,1,0).locked()).control("heated",ControlSpec.toggle(false).locked())
+                .control("stir_due",ControlSpec.toggle(false).locked()).control("ready",ControlSpec.toggle(false).locked()).build())
+            .orientation(StationType.Orientation.BLOCK)
+            .openWhen((p,pos,state) -> Settings.BAKERY.get() && !p.isSecondaryUseActive())
+            .logic(JamLogic::new).build());
     }
 
     private static StationType station(ResourceLocation id, String block, int inputs, boolean bowl) {
@@ -50,6 +59,7 @@ public final class StirAndCharm {
             .slots("result", 1, SlotRules.DEFAULT.kept().accepts(s -> false))
             .control("progress", ControlSpec.range(0, 1, 0).locked())
             .control("heated", ControlSpec.toggle(false).locked())
+            .control("lid_open",ControlSpec.toggle(true).locked())
             .control("spoon_x", ControlSpec.range(-3, 3, 0).locked())
             .control("spoon_z", ControlSpec.range(-3, 3, 0).locked())
             .tank("broth", TankSpec.of(100));

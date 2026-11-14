@@ -1,4 +1,13 @@
 {
+  "handson_farm_charm.pot_lid": "Открыть / закрыть крышку",
+  "handson_farm_charm.board.book_all": "Все рецепты",
+  "handson_farm_charm.board.book_tools": "Работа топором",
+  "handson_farm_charm.jam.stir": "Вращайте венчик мышью",
+  "handson_farm_charm.jam.stir_due": "Пора помешать варенье!",
+  "handson_farm_charm.jam.cooking": "Варенье: %s%%",
+  "handson_farm_charm.jam.burnt": "Варенье сгорело — очистите кастрюлю",
+  "handson_farm_charm.jam.bottle": "Наполнить банку вареньем",
+  "handson_farm_charm.jam.dump": "Очистить кастрюлю — готовящееся варенье пропадёт",
   "handson_farm_charm.board.cut": "Положите нож или тесак и режьте по пунктирным отметкам",
   "handson_farm_charm.board.surface": "ЛКМ: резать / собрать. ПКМ: забрать",
   "handson_farm_charm.board.book_cut": "Нож / тесак",
@@ -27,7 +36,7 @@
   "handson_farm_charm.fill_failed": "Не удалось добавить рецепт: проверьте ингредиенты, свободное место и крышку.",
   "handson_farm_charm.serving_failed": "Для получения нужны подходящая посуда и свободное место",
   "handson_farm_charm.serve_with": "%s — для подачи: %s",
-  "handson_farm_charm.book.pot_time": "30–45 с",
+  "handson_farm_charm.book.pot_time": "23–35 с",
   "handson_farm_charm.next": "Следующая страница",
   "handson_farm_charm.prev": "Предыдущая страница"
 }

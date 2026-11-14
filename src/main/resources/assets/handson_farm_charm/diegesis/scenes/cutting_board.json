@@ -15,7 +15,77 @@
     "fov": 30,
     "neighbors": {
       "enabled": false
-    }
+    },
+    "glances": [
+      {
+        "id": "approach_0",
+        "position": [
+          8.0,
+          35.5,
+          -21.0
+        ],
+        "target": [
+          8,
+          1,
+          8
+        ],
+        "time": 0.25,
+        "back_on_take": false,
+        "back_zone": 0,
+        "hint": false
+      },
+      {
+        "id": "approach_1",
+        "position": [
+          37.0,
+          35.5,
+          7.999999999999998
+        ],
+        "target": [
+          8,
+          1,
+          8
+        ],
+        "time": 0.25,
+        "back_on_take": false,
+        "back_zone": 0,
+        "hint": false
+      },
+      {
+        "id": "approach_2",
+        "position": [
+          8.000000000000004,
+          35.5,
+          37.0
+        ],
+        "target": [
+          8,
+          1,
+          8
+        ],
+        "time": 0.25,
+        "back_on_take": false,
+        "back_zone": 0,
+        "hint": false
+      },
+      {
+        "id": "approach_3",
+        "position": [
+          -21.0,
+          35.5,
+          8.000000000000005
+        ],
+        "target": [
+          8,
+          1,
+          8
+        ],
+        "time": 0.25,
+        "back_on_take": false,
+        "back_zone": 0,
+        "hint": false
+      }
+    ]
   },
   "interface": {
     "hide_player": true,
@@ -35,62 +105,6 @@
   },
   "nodes": [
     {
-      "id": "book_open",
-      "pos": [
-        15.5,
-        15.72,
-        -4
-      ],
-      "rotation": [
-        -50,
-        0,
-        0
-      ],
-      "scale": 0.69,
-      "hidden": true,
-      "collider": {
-        "from": [
-          -4.4,
-          -0.4,
-          -3.9
-        ],
-        "to": [
-          4.4,
-          1.4,
-          3.9
-        ]
-      }
-    },
-    {
-      "id": "knife",
-      "pos": [
-        -3,
-        3,
-        7
-      ],
-      "slot": {
-        "slot": "knife[0]",
-        "size": 3.5
-      },
-      "tooltip": "handson_farm_charm.board.knife"
-    },
-    {
-      "id": "pending",
-      "drop_zone": "pending",
-      "collider": {
-        "from": [
-          1,
-          0,
-          3
-        ],
-        "to": [
-          11,
-          5.2,
-          13
-        ]
-      }
-    },
-    {
       "id": "surface",
       "collider": {
         "from": [
@@ -105,6 +119,21 @@
         ]
       },
       "tooltip": "handson_farm_charm.board.surface"
+    },
+    {
+      "id": "carved",
+      "pos": [
+        6,
+        3.5,
+        8
+      ],
+      "rotation": [
+        0,
+        25,
+        -147
+      ],
+      "scale": 0.5,
+      "pickable": false
     },
     {
       "id": "food",
@@ -144,52 +173,6 @@
           "pickable": false
         }
       ]
-    },
-    {
-      "id": "mouth",
-      "drop_zone": "ingredients",
-      "collider": {
-        "from": [
-          1,
-          0.6,
-          3
-        ],
-        "to": [
-          11,
-          1,
-          13
-        ]
-      }
-    },
-    {
-      "id": "assemble",
-      "pos": [
-        6,
-        3,
-        15
-      ],
-      "scale": 0.2,
-      "visual": {
-        "item": "minecraft:crafting_table",
-        "anchor": [
-          8,
-          8,
-          8
-        ]
-      },
-      "collider": {
-        "from": [
-          -8,
-          -8,
-          -8
-        ],
-        "to": [
-          8,
-          8,
-          8
-        ]
-      },
-      "tooltip": "handson_farm_charm.board.assemble"
     },
     {
       "id": "layer_0",
@@ -237,164 +220,246 @@
       "pickable": false
     },
     {
-      "id": "result_0",
+      "id": "layer_5",
       "pos": [
-        -5,
+        6,
+        4.37,
+        8
+      ],
+      "pickable": false
+    },
+    {
+      "id": "layer_6",
+      "pos": [
+        6,
+        5.0200000000000005,
+        8
+      ],
+      "pickable": false
+    },
+    {
+      "id": "layer_7",
+      "pos": [
+        6,
+        5.67,
+        8
+      ],
+      "pickable": false
+    },
+    {
+      "id": "layer_8",
+      "pos": [
+        6,
+        6.32,
+        8
+      ],
+      "pickable": false
+    },
+    {
+      "id": "approach_ui",
+      "pos": [
         8,
-        -2
-      ],
-      "rotation": [
-        -50,
         0,
-        0
+        8
       ],
-      "slot": {
-        "slot": "result[0]",
-        "size": 3.5,
-        "display": "flat",
-        "counts": "always"
-      },
-      "tooltip": "handson_farm_charm.result"
-    },
-    {
-      "id": "result_1",
-      "pos": [
-        -9,
-        8,
-        -2
-      ],
-      "rotation": [
-        -50,
-        0,
-        0
-      ],
-      "slot": {
-        "slot": "result[1]",
-        "size": 3.5,
-        "display": "flat",
-        "counts": "always"
-      },
-      "tooltip": "handson_farm_charm.result"
-    },
-    {
-      "id": "result_2",
-      "pos": [
-        -5,
-        5,
-        -2
-      ],
-      "rotation": [
-        -50,
-        0,
-        0
-      ],
-      "slot": {
-        "slot": "result[2]",
-        "size": 3.5,
-        "display": "flat",
-        "counts": "always"
-      },
-      "tooltip": "handson_farm_charm.result"
-    },
-    {
-      "id": "result_3",
-      "pos": [
-        -9,
-        5,
-        -2
-      ],
-      "rotation": [
-        -50,
-        0,
-        0
-      ],
-      "slot": {
-        "slot": "result[3]",
-        "size": 3.5,
-        "display": "flat",
-        "counts": "always"
-      },
-      "tooltip": "handson_farm_charm.result"
-    },
-    {
-      "id": "result_4",
-      "pos": [
-        -5,
-        2,
-        -2
-      ],
-      "rotation": [
-        -50,
-        0,
-        0
-      ],
-      "slot": {
-        "slot": "result[4]",
-        "size": 3.5,
-        "display": "flat",
-        "counts": "always"
-      },
-      "tooltip": "handson_farm_charm.result"
-    },
-    {
-      "id": "result_5",
-      "pos": [
-        -9,
-        2,
-        -2
-      ],
-      "rotation": [
-        -50,
-        0,
-        0
-      ],
-      "slot": {
-        "slot": "result[5]",
-        "size": 3.5,
-        "display": "flat",
-        "counts": "always"
-      },
-      "tooltip": "handson_farm_charm.result"
-    },
-    {
-      "id": "result_6",
-      "pos": [
-        -5,
-        -1,
-        -2
-      ],
-      "rotation": [
-        -50,
-        0,
-        0
-      ],
-      "slot": {
-        "slot": "result[6]",
-        "size": 3.5,
-        "display": "flat",
-        "counts": "always"
-      },
-      "tooltip": "handson_farm_charm.result"
-    },
-    {
-      "id": "result_7",
-      "pos": [
-        -9,
-        -1,
-        -2
-      ],
-      "rotation": [
-        -50,
-        0,
-        0
-      ],
-      "slot": {
-        "slot": "result[7]",
-        "size": 3.5,
-        "display": "flat",
-        "counts": "always"
-      },
-      "tooltip": "handson_farm_charm.result"
+      "pickable": false,
+      "children": [
+        {
+          "id": "book_open",
+          "pos": [
+            7.5,
+            15.72,
+            -12
+          ],
+          "rotation": [
+            -50,
+            0,
+            0
+          ],
+          "scale": 0.69,
+          "hidden": true,
+          "collider": {
+            "from": [
+              -4.4,
+              -0.4,
+              -3.9
+            ],
+            "to": [
+              4.4,
+              1.4,
+              3.9
+            ]
+          }
+        },
+        {
+          "id": "result_0",
+          "pos": [
+            -13,
+            8,
+            -10
+          ],
+          "rotation": [
+            -50,
+            0,
+            0
+          ],
+          "slot": {
+            "slot": "result[0]",
+            "size": 3.5,
+            "display": "flat",
+            "counts": "always",
+            "highlight": false
+          },
+          "tooltip": "handson_farm_charm.result"
+        },
+        {
+          "id": "result_1",
+          "pos": [
+            -17,
+            8,
+            -10
+          ],
+          "rotation": [
+            -50,
+            0,
+            0
+          ],
+          "slot": {
+            "slot": "result[1]",
+            "size": 3.5,
+            "display": "flat",
+            "counts": "always",
+            "highlight": false
+          },
+          "tooltip": "handson_farm_charm.result"
+        },
+        {
+          "id": "result_2",
+          "pos": [
+            -13,
+            5,
+            -10
+          ],
+          "rotation": [
+            -50,
+            0,
+            0
+          ],
+          "slot": {
+            "slot": "result[2]",
+            "size": 3.5,
+            "display": "flat",
+            "counts": "always",
+            "highlight": false
+          },
+          "tooltip": "handson_farm_charm.result"
+        },
+        {
+          "id": "result_3",
+          "pos": [
+            -17,
+            5,
+            -10
+          ],
+          "rotation": [
+            -50,
+            0,
+            0
+          ],
+          "slot": {
+            "slot": "result[3]",
+            "size": 3.5,
+            "display": "flat",
+            "counts": "always",
+            "highlight": false
+          },
+          "tooltip": "handson_farm_charm.result"
+        },
+        {
+          "id": "result_4",
+          "pos": [
+            -13,
+            2,
+            -10
+          ],
+          "rotation": [
+            -50,
+            0,
+            0
+          ],
+          "slot": {
+            "slot": "result[4]",
+            "size": 3.5,
+            "display": "flat",
+            "counts": "always",
+            "highlight": false
+          },
+          "tooltip": "handson_farm_charm.result"
+        },
+        {
+          "id": "result_5",
+          "pos": [
+            -17,
+            2,
+            -10
+          ],
+          "rotation": [
+            -50,
+            0,
+            0
+          ],
+          "slot": {
+            "slot": "result[5]",
+            "size": 3.5,
+            "display": "flat",
+            "counts": "always",
+            "highlight": false
+          },
+          "tooltip": "handson_farm_charm.result"
+        },
+        {
+          "id": "result_6",
+          "pos": [
+            -13,
+            -1,
+            -10
+          ],
+          "rotation": [
+            -50,
+            0,
+            0
+          ],
+          "slot": {
+            "slot": "result[6]",
+            "size": 3.5,
+            "display": "flat",
+            "counts": "always",
+            "highlight": false
+          },
+          "tooltip": "handson_farm_charm.result"
+        },
+        {
+          "id": "result_7",
+          "pos": [
+            -17,
+            -1,
+            -10
+          ],
+          "rotation": [
+            -50,
+            0,
+            0
+          ],
+          "slot": {
+            "slot": "result[7]",
+            "size": 3.5,
+            "display": "flat",
+            "counts": "always",
+            "highlight": false
+          },
+          "tooltip": "handson_farm_charm.result"
+        }
+      ]
     }
   ]
 }

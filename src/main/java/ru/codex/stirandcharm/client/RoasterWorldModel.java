@@ -35,8 +35,10 @@ public final class RoasterWorldModel {
                         boolean lid = sprite.equals("block/roaster_parts") && RoasterBody.minY(q) >= lidY/16F - .001F;
                         if (lid) { var raised = rotate(q, pivot, turn); out.add(raised); out.add(RoasterBody.reverse(raised)); }
                         else if (!(sprite.equals("block/roaster_bottom") && q.getDirection() == Direction.UP)) {
-                            out.add(q);
-                            if (sprite.equals("block/roaster_bottom") || sprite.equals("block/roaster_side")) out.add(RoasterBody.reverse(q));
+                            // The inner floor must sit above the supporting block's top face.
+                            var body=liftFloor(q);
+                            out.add(body);
+                            if (sprite.equals("block/roaster_bottom") || sprite.equals("block/roaster_side")) out.add(RoasterBody.reverse(body));
                         }
                     }
                     return out;
@@ -45,6 +47,13 @@ public final class RoasterWorldModel {
                 @Override public List<BakedQuad> getQuads(BlockState state, Direction side, RandomSource random, ModelData data, RenderType layer) { return open(originalModel.getQuads(state,side,random,data,layer)); }
             };
         });
+    }
+    private static BakedQuad liftFloor(BakedQuad quad) {
+        int[] source=quad.getVertices();int stride=source.length/4;
+        for(int i=0;i<4;i++)if(Float.intBitsToFloat(source[i*stride+1])>.001F)return quad;
+        int[] data=source.clone();
+        for(int i=0;i<4;i++)data[i*stride+1]=Float.floatToRawIntBits(Float.intBitsToFloat(data[i*stride+1])+.0125F);
+        return new BakedQuad(data,quad.getTintIndex(),quad.getDirection(),quad.getSprite(),quad.isShade());
     }
     private static BakedQuad rotate(BakedQuad quad, Vector3f pivot, Quaternionf turn) {
         int[] data = quad.getVertices().clone(); int stride = data.length / 4;

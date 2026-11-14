@@ -20,11 +20,19 @@ final class ResultBadge implements NodePainter {
     private ApplianceCookbook applianceSource;
     private ItemStack shown = ItemStack.EMPTY;
     private boolean ready;
+    private boolean jam;
+    ResultBadge(StationView view){this.view=view;this.bowl=false;this.jam=true;refresh();}
     ResultBadge(StationView view, boolean bowl) { this.view = view; this.bowl = bowl; refresh(); }
     ResultBadge(StationView view, Appliance kind, ApplianceCookbook source) {
         this.view = view; this.bowl = false; this.kind = kind; this.applianceSource = source; refresh();
     }
     void refresh() {
+        if(jam){
+            var data=view.state().data();shown=data.contains("meal")?ItemStack.parseOptional(view.level().registryAccess(),data.getCompound("meal")):ItemStack.EMPTY;
+            ready=view.state().getControl("ready")>.5F;
+            view.node("result").ifPresent(n -> n.setTooltip(Component.translatable("handson_farm_charm.jam.bottle")));
+            return;
+        }
         var result = view.state().getItems("result")[0];
         ready = !result.isEmpty();
         shown = ready ? result.copy() : (applianceSource == null ? FarmCookbook.matching(view, bowl) : applianceSource.matching(view))
@@ -64,10 +72,11 @@ final class ResultBadge implements NodePainter {
             y += 10;
         }
         boolean batch=kind==Appliance.MINCER && !view.state().getItems("ingredients")[0].isEmpty();
-        int percent = ready && !batch ? 100 : Math.round(view.state().getControl("progress") * 100);
-        Component caption = ready && batch ? Component.translatable("handson_farm_charm.badge.batch",shown.getCount(),percent)
+        int percent = ready && !batch && !jam ? 100 : Math.round(view.state().getControl("progress") * 100);
+        Component caption = jam ? jamCaption(percent)
+            : ready && batch ? Component.translatable("handson_farm_charm.badge.batch",shown.getCount(),percent)
             : ready ? Component.translatable("handson_farm_charm.badge.ready", shown.getCount())
-            : kind == Appliance.ROASTER && view.state().getControl("lid_open") > 0 ? Component.translatable("handson_farm_charm.close_lid")
+            : kind == Appliance.ROASTER && view.level().getBlockState(view.pos()).hasProperty(RoasterLid.OPEN) && view.state().getControl("lid_open") > 0 ? Component.translatable("handson_farm_charm.close_lid")
             : Component.translatable(kind == Appliance.MINCER ? "handson_farm_charm.mincing" : bowl ? "handson_farm_charm.mixing" : view.state().getControl("heated") > 0
                 ? "handson_farm_charm.cooking" : "handson_farm_charm.no_heat", percent);
         String label = caption.getString();
@@ -76,6 +85,12 @@ final class ResultBadge implements NodePainter {
         rect(pose, buffers, -32, y + 13, 64, 2, 0x88352B1D);
         rect(pose, buffers, -32, y + 13, .64F * percent, 2, ready ? 0xFF9ACA77 : 0xFFE0B266);
         pose.popPose();
+    }
+    private Component jamCaption(int percent){
+        if(view.state().data().getBoolean("burnt"))return Component.translatable("handson_farm_charm.jam.burnt");
+        if(view.state().getControl("stir_due")>.5F)return Component.translatable("handson_farm_charm.jam.stir_due");
+        return percent>=100?Component.translatable("handson_farm_charm.badge.ready",view.state().data().getInt("jars"))
+            :Component.translatable("handson_farm_charm.jam.cooking",percent);
     }
     private static void rect(PoseStack pose, MultiBufferSource buffers, float x, float y, float w, float h, int color) {
         if (w <= 0) return;

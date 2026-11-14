@@ -1,0 +1,3 @@
+dfaa23e43bc22b11e672a40f89c92bb35805c373a5cd58df2379f071a4b5613e  Handily-0.5.0-project.zip
+14ead0d77659e6dca7974e7d52494ad0829667af6895544a7a10ed7b8cebcea0  handily-neoforge-1.21.1-0.5.0-sources.jar
+924a91a78bdffc6f3c25f14945aadea133346541d01320b2ea65d5ab339017a4  handily-neoforge-1.21.1-0.5.0.jar

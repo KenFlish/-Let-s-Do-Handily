@@ -3,7 +3,7 @@
   "minVersion": "0.8",
   "package": "ru.codex.stirandcharm.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": ["CookingPotAccess", "RoasterAccess", "StoveAccess", "MincerOutput", "ServingInventory", "PotServing", "RoasterServing", "ServingMenu", "RoasterLidBlock", "RoasterCooking", "PotStirBoost"],
+  "mixins": ["CookingPotAccess", "RoasterAccess", "StoveAccess", "MincerOutput", "ServingInventory", "PotServing", "RoasterServing", "ServingMenu", "RoasterLidBlock", "RoasterCooking", "PotStirBoost", "BoardQueue", "CookingTime", "RoastingTime"],
   "client": ["SpriteImageAccess", "MincerFoodRenderer", "BoardSceneRenderer"],
   "injectors": {"defaultRequire": 1}
 }

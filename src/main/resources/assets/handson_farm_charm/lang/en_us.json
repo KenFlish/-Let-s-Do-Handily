@@ -1,5 +1,14 @@
 {
-  "handson_farm_charm.board.cut": "Place a knife or cleaver, then cut along the dashed marks",
+  "handson_farm_charm.pot_lid": "Open / close the lid",
+  "handson_farm_charm.board.book_all": "All recipes",
+  "handson_farm_charm.board.book_tools": "Axe work",
+  "handson_farm_charm.jam.stir": "Stir with circular mouse movements",
+  "handson_farm_charm.jam.stir_due": "Stir the jam!",
+  "handson_farm_charm.jam.cooking": "Jam: %s%%",
+  "handson_farm_charm.jam.burnt": "Burnt jam — empty the pot",
+  "handson_farm_charm.jam.bottle": "Fill a jam jar",
+  "handson_farm_charm.jam.dump": "Empty pot — a cooking batch will be discarded",
+  "handson_farm_charm.board.cut": "Use a knife or cleaver to cut along the dashed marks",
   "handson_farm_charm.board.surface": "Left: cut / assemble. Right: take",
   "handson_farm_charm.board.book_cut": "Knife / cleaver",
   "handson_farm_charm.board.book_assembly": "Assemble",
@@ -27,7 +36,7 @@
   "handson_farm_charm.fill_failed": "Cannot add this recipe: check ingredients, free space and the lid.",
   "handson_farm_charm.serving_failed": "A matching serving container and free inventory space are required",
   "handson_farm_charm.serve_with": "%s — serve with: %s",
-  "handson_farm_charm.book.pot_time": "30–45 s",
+  "handson_farm_charm.book.pot_time": "23–35 s",
   "handson_farm_charm.next": "Next page",
   "handson_farm_charm.prev": "Previous page"
 }

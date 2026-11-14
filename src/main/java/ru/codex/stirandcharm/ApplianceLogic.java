@@ -71,13 +71,16 @@ public final class ApplianceLogic implements StationLogic {
                 mincer.crank(); lastCrank = now;
             }
         } else if (kind == Appliance.STOVE && action.equals("ignite")) {
-            ((StoveBlockEntity) container).ignite();
+            var stove=(StoveBlockEntity)container;boolean was=stove.isLit();stove.ignite();
+            if(!was && stove.isLit())ctx.level().playSound(null,ctx.pos(),net.minecraft.sounds.SoundEvents.FLINTANDSTEEL_USE,net.minecraft.sounds.SoundSource.BLOCKS,1,1);
         } else if (kind == Appliance.STOVE && action.equals("extinguish")) {
-            ((StoveBlockEntity) container).extinguish();
+            var stove=(StoveBlockEntity)container;boolean was=stove.isLit();stove.extinguish();
+            if(was)ctx.level().playSound(null,ctx.pos(),net.minecraft.sounds.SoundEvents.FIRE_EXTINGUISH,net.minecraft.sounds.SoundSource.BLOCKS,.7F,1);
         } else if (kind == Appliance.ROASTER && action.equals("lid")) {
             var state = ctx.blockState();
             if (!state.hasProperty(RoasterLid.OPEN)) return;
             ctx.level().setBlock(ctx.pos(),state.cycle(RoasterLid.OPEN),3);
+            ctx.level().playSound(null,ctx.pos(),state.getValue(RoasterLid.OPEN)?net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_CLOSE:net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_OPEN,net.minecraft.sounds.SoundSource.BLOCKS,.45F,1.3F);
             container.setChanged(); tick(ctx);
         } else if (kind == Appliance.ROASTER && action.equals("collect")) {
             int taken=MealServing.collect(player,container,data.getBoolean("one"),data.getBoolean("inventory"));

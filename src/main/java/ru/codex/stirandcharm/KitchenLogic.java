@@ -35,12 +35,15 @@ public final class KitchenLogic implements StationLogic {
     @Override public void onOpen(StationContext station, Player player) {
         // The native menu normally sets this. Preserve learned recipes and owner-dependent effects.
         if (!bowl) ((CookingPotAccess) container).stirandcharm$owner(player.getUUID());
+        if(station.blockState().hasProperty(RoasterLid.OPEN) && !station.blockState().getValue(RoasterLid.OPEN))
+            station.level().setBlock(station.pos(),station.blockState().setValue(RoasterLid.OPEN,true),3);
         publish(station);
     }
     @Override public void onClose(StationContext station, Player player) { motion.remove(player.getUUID()); }
 
     @Override public boolean mayPlace(StationContext station, Player player, SlotRef slot, ItemStack stack) {
         if (slot.group().equals("result")) return false;
+        if(slot.group().equals("ingredients") && station.blockState().hasProperty(RoasterLid.OPEN) && !station.blockState().getValue(RoasterLid.OPEN))return false;
         if (slot.group().equals("containers")) return KitchenRecipes.all(station.level(), false).stream()
             .map(h -> KitchenRecipes.dish(h.value())).anyMatch(s -> !s.isEmpty() && s.is(stack.getItem()));
         if (bowl && ((CraftingBowlBlockEntity) container).isFinished()) return false;
@@ -68,7 +71,12 @@ public final class KitchenLogic implements StationLogic {
 
     @Override public void onCustomAction(StationContext station, Player player, String action, CompoundTag data) {
         if (station.level().isClientSide) return;
-        if (action.equals("stir")) {
+        if(action.equals("lid") && station.blockState().hasProperty(RoasterLid.OPEN)) {
+            boolean open=station.blockState().getValue(RoasterLid.OPEN);
+            station.level().setBlock(station.pos(),station.blockState().setValue(RoasterLid.OPEN,!open),3);
+            station.level().playSound(null,station.pos(),open?net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_CLOSE:net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_OPEN,net.minecraft.sounds.SoundSource.BLOCKS,.5F,1.2F);
+        } else if (action.equals("stir")) {
+            if(station.blockState().hasProperty(RoasterLid.OPEN) && !station.blockState().getValue(RoasterLid.OPEN))return;
             var sample = motion.computeIfAbsent(player.getUUID(), id -> new StirMotion())
                 .accept(station.level().getGameTime(), data.getFloat("x"), data.getFloat("z"));
             if (sample == null) return;
@@ -106,6 +114,7 @@ public final class KitchenLogic implements StationLogic {
                 break;
             }
         } else if (action.equals("fill") && Settings.BOOK.get()) {
+            if(station.blockState().hasProperty(RoasterLid.OPEN) && !station.blockState().getValue(RoasterLid.OPEN))return;
             ResourceLocation id = ResourceLocation.tryParse(data.getString("recipe"));
             if (id == null) return;
             Optional<? extends RecipeHolder<?>> recipe = KitchenRecipes.all(station.level(), bowl).stream().filter(h -> h.id().equals(id)).findFirst();
@@ -145,6 +154,7 @@ public final class KitchenLogic implements StationLogic {
             progress = ((CookingPotAccess) container).stirandcharm$cookingTime() / (float) CookingPotBlockEntity.getMaxCookingTime();
             heated = ((CookingPotBlockEntity) container).isBeingBurned();
         }
+        station.state().setControl("lid_open",!station.blockState().hasProperty(RoasterLid.OPEN) || station.blockState().getValue(RoasterLid.OPEN)?1:0);
         station.state().setControl("progress", progress);
         station.state().setControl("heated", heated ? 1 : 0);
         boolean any = !container.getItem(bowl ? 4 : 7).isEmpty();
