@@ -1,6 +1,9 @@
 {
   "work_plane": 14,
   "idle_visible": false,
+  "clear_view": {
+    "blocks": false
+  },
   "camera": {
     "position": [
       8,

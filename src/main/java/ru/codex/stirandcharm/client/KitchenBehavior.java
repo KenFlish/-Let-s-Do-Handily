@@ -64,6 +64,7 @@ public final class KitchenBehavior implements StationBehavior {
             }
             foodAngle += spin*delta; spin *= (float)Math.exp(-delta*3);
             for (int i=0;i<6;i++) view.node("ingredient_"+i).ifPresent(n -> {
+                ContentFacing.turn(view, n);
                 var base=n.definition().transform().pos();
                 float bx=base.x()-8,bz=base.z()-8;
                 float radius=(float)Math.hypot(bx,bz); if (radius>3.4F) { bx*=3.4F/radius; bz*=3.4F/radius; }

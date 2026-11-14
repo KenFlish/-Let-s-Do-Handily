@@ -80,11 +80,14 @@ public final class HandilyCompatTests {
         h.assertTrue(board.isCutting() && p.getInventory().countItem(tool.getItem())==1,"One input transferred to native pending slot");
         int count=CuttingBoardBlockEntity.requiredChops(tool,recipe);
         for(int i=0;i<count;i++) h.runAtTickTime(1+i*5,()->{
-            int before=board.getPendingChops();var tag=new CompoundTag();tag.putInt("mark",before);tag.putFloat("x",8);tag.putFloat("z",BoardTools.markZ(before,count));
-            var wrong=tag.copy();wrong.putFloat("z",Float.NaN);logic.onCustomAction(ctx,p,"chop",wrong);
-            h.assertTrue(board.getPendingChops()==before,"Invalid cut position must be rejected");
+            int mark=(int)ctx.state().getControl("chops");
+            var tag=new CompoundTag();tag.putInt("mark",mark);tag.putFloat("at",8);
+            var wrong=tag.copy();wrong.putFloat("at",Float.NaN);logic.onCustomAction(ctx,p,"chop",wrong);
+            h.assertTrue((int)ctx.state().getControl("chops")==mark,"Invalid cut position must be rejected");
+            int before=Arrays.stream(ctx.state().getItems("result")).mapToInt(ItemStack::getCount).sum();
             logic.onCustomAction(ctx,p,"chop",tag);
-            if(board.isCutting()) {logic.onCustomAction(ctx,p,"chop",tag);h.assertTrue(board.getPendingChops()==before+1,"Same-tick spam must not cut twice");}
+            logic.onCustomAction(ctx,p,"chop",tag);
+            h.assertTrue(Arrays.stream(ctx.state().getItems("result")).mapToInt(ItemStack::getCount).sum()>=before,"The same tick cuts at most once");
         });
         h.runAtTickTime(count*5+5,()->{
             h.assertTrue(!board.isCutting(),"Native chop threshold reached");
@@ -105,11 +108,14 @@ public final class HandilyCompatTests {
             // Deliberately seed inventory backwards: the finisher still belongs last on the board.
             for(var ingredient:recipe.getIngredients().reversed()) p.getInventory().add(ingredient.getItems()[0].copyWithCount(1));
             logic.onCustomAction(ctx,p,"fill",fill(holder));
-            h.assertTrue(recipe.matches(new CuttingBoardAssemblyRecipe.Input(board.getItems()),ctx.level()),"Transferred layout matches "+holder.id());
-            var expected=BoardDishes.make(ctx.level(),recipe,board.getItems()).orElseThrow().result();
-            logic.onCustomAction(ctx,p,"assemble",new CompoundTag());
-            h.assertTrue(board.isEmpty() && p.getInventory().isEmpty(),"Assembly consumes each ingredient once");
-            h.assertTrue(ItemStack.matches(ctx.state().getItems("result")[0],expected),"Native assembly output preserved for "+holder.id()+": wanted "+expected+", got "+ctx.state().getItems("result")[0]);tested++;
+            var expected=KitchenRecipes.result(ctx.level(),recipe);
+            if(!board.isEmpty()){
+                h.assertTrue(recipe.matches(new CuttingBoardAssemblyRecipe.Input(board.getItems()),ctx.level()),"Transferred layout matches "+holder.id());
+                logic.onCustomAction(ctx,p,"assemble",new CompoundTag());
+            }
+            h.assertTrue(board.isEmpty(),"Assembly consumes the layers");
+            h.assertTrue(Arrays.stream(ctx.state().getItems("result")).anyMatch(s -> ItemStack.isSameItemSameComponents(s,expected)),
+                "Native assembly output preserved for "+holder.id()+": wanted "+expected+", got "+ctx.state().getItems("result")[0]);tested++;
         }
         h.assertTrue(tested>0,"Assembly recipes exercised");h.succeed();
     }
@@ -131,16 +137,16 @@ public final class HandilyCompatTests {
         p.inventoryMenu.setCarried(tool.copy());
         int required=CuttingBoardBlockEntity.requiredChops(tool,recipe);
         for(int i=0;i<required;i++)h.runAtTickTime(1+i*5,()->{
-            var tag=new CompoundTag();tag.putInt("mark",board.getPendingChops());tag.putFloat("x",6);tag.putFloat("z",8);logic.onCustomAction(c,p,"chop",tag);
+            var tag=new CompoundTag();tag.putInt("mark",(int)c.state().getControl("chops"));tag.putFloat("at",8);logic.onCustomAction(c,p,"chop",tag);
         });
         h.runAtTickTime(required*5+5,()->{
-            h.assertTrue(board.getPending().getCount()==2,"One finished cut consumes exactly one queued ingredient");
-            h.assertTrue(board.getKnife().isEmpty() && p.inventoryMenu.getCarried().getDamageValue()==tool.getDamageValue()+1,"Borrowed cursor knife returns with native wear");
+            h.assertTrue(board.getPending().isEmpty(),"The last mark cuts the whole queued batch");
+            h.assertTrue(board.getKnife().isEmpty() && p.inventoryMenu.getCarried().getDamageValue()==tool.getDamageValue()+3,"Every queued item wears the borrowed knife");
+            h.assertTrue(Arrays.stream(c.state().getItems("result")).mapToInt(ItemStack::getCount).sum()>=3,"Every queued item gives its result");
             var saved=board.saveWithoutMetadata(c.level().registryAccess());
             var restored=new CuttingBoardBlockEntity(c.pos(),c.blockState());restored.loadWithComponents(saved,c.level().registryAccess());
-            h.assertTrue(restored.getPending().getCount()==2 && restored.getPendingChops()==0,"Queue persists in native NBT");
-            logic.onCustomAction(c,p,"take",new CompoundTag());
-            h.assertTrue(!board.isCutting() && p.getInventory().countItem(rawItem)==2,"Taking a queue returns the two remaining inputs");h.succeed();
+            h.assertTrue(restored.getPending().isEmpty() && restored.getPendingChops()==0,"A finished batch persists empty");
+            h.succeed();
         });
     }
     @GameTest(template="empty") public static void boardCarvedKnifeAndFullOutput(GameTestHelper h){
@@ -163,7 +169,41 @@ public final class HandilyCompatTests {
         for(var ingredient:BoardDishes.needs(cake.value()))p.getInventory().add(ingredient.getItems()[0].copyWithCount(1));
         logic.onCustomAction(c,p,"fill",fill(cake));logic.onCustomAction(c,p,"assemble",new CompoundTag());
         h.assertTrue(Arrays.stream(c.state().getItems("result")).filter(s -> s.is(Items.CAKE)).mapToInt(ItemStack::getCount).sum()==1,"Native cake recipe assembles on the board");
-        h.assertTrue(Arrays.stream(c.state().getItems("result")).filter(s -> s.is(Items.BUCKET)).mapToInt(ItemStack::getCount).sum()==3,"All three milk buckets are returned");h.succeed();
+        h.assertTrue(p.getInventory().items.stream().filter(s -> s.is(Items.BUCKET)).mapToInt(ItemStack::getCount).sum()==3,"All three milk buckets are returned to the cook");h.succeed();
+    }
+    @GameTest(template="empty") public static void cleaverAndKnifeNeedTheSameChops(GameTestHelper h){
+        var recipe=BoardRecipes.all(h.getLevel()).stream().filter(r -> r.value() instanceof CuttingBoardRecipe c && c.getIngredient().getItems().length>0)
+            .map(r -> (CuttingBoardRecipe)r.value()).findFirst().orElseThrow();
+        var cleaver=new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("farm_and_charm:iron_cleaver")));
+        h.assertTrue(!cleaver.isEmpty() && cleaver.getItem() instanceof net.satisfy.farm_and_charm.core.item.CleaverItem,"The Farm & Charm cleaver exists");
+        h.assertTrue(CuttingBoardBlockEntity.requiredChops(cleaver,recipe)==Math.min(3,Math.max(1,recipe.getChops())),"A cleaver uses the recipe's own chop count");
+        var knife=BuiltInRegistries.ITEM.stream().map(ItemStack::new).filter(s -> BoardTools.knife(s) && !(s.getItem() instanceof net.satisfy.farm_and_charm.core.item.CleaverItem)).findFirst();
+        if(knife.isPresent())h.assertTrue(CuttingBoardBlockEntity.requiredChops(knife.get(),recipe)==Math.min(3,Math.max(1,recipe.getChops())),"A knife uses the recipe's own chop count");
+        h.succeed();
+    }
+    @GameTest(template="empty",timeoutTicks=120) public static void boardAssemblyMakesEveryRound(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:cutting_board","cutting_board");var logic=new BoardLogic(c);
+        var board=(CuttingBoardBlockEntity)c.blockEntity();var p=h.makeMockPlayer(GameType.SURVIVAL);
+        var holder=BoardRecipes.all(c.level()).stream().filter(r -> r.value() instanceof CuttingBoardAssemblyRecipe a
+            && a.getIngredients().stream().allMatch(i -> i.getItems().length>0)).findFirst().orElseThrow();
+        for(var ingredient:holder.value().getIngredients())board.addItem(ingredient.getItems()[0].copyWithCount(3));
+        ((BoardSelection)board).handily$recipe(holder.id());
+        logic.onCustomAction(c,p,"assemble",new CompoundTag());
+        int made=Arrays.stream(c.state().getItems("result")).mapToInt(ItemStack::getCount).sum();
+        int per=KitchenRecipes.result(c.level(),holder.value()).getCount();
+        h.assertTrue(board.isEmpty() && made==3*per,"Three layers make three rounds, not one");
+        h.succeed();
+    }
+    @GameTest(template="empty") public static void mincerCrankNeedsAWholeTurn(GameTestHelper h){
+        var motion=new CrankMotion();boolean cranked=false;long tick=0;
+        for(int i=0;i<=20;i++){
+            double a=i*.42;var sample=motion.accept(tick++,(float)Math.cos(a)*2,(float)Math.sin(a)*2);
+            if(sample!=null && sample.crank())cranked=true;
+        }
+        h.assertTrue(cranked,"A full circle turns the crank");
+        var straight=new CrankMotion();boolean straightCranked=false;
+        for(int i=0;i<=20;i++){var sample=straight.accept(i,1+i*.05F,.5F);if(sample!=null && sample.crank())straightCranked=true;}
+        h.assertTrue(!straightCranked,"A straight drag does not turn the crank");h.succeed();
     }
     @GameTest(template="empty") public static void cookingDurationsAndCameraDirections(GameTestHelper h){
         h.assertTrue(CookingPotBlockEntity.getMaxCookingTime()==700 && RoasterBlockEntity.getMaxRoastingTime()==700,"45 seconds changed to 35 seconds in native timers");

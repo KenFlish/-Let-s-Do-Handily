@@ -19,8 +19,7 @@ import ru.codex.stirandcharm.mixin.*;
 public final class ApplianceLogic implements StationLogic {
     private final Appliance kind;
     private final Container container;
-    private final Map<UUID, StirMotion> motion = new HashMap<>();
-    private long lastCrank = Long.MIN_VALUE;
+    private final Map<UUID, CrankMotion> motion = new HashMap<>();
     public ApplianceLogic(StationContext ctx, Appliance kind) {
         this.kind = kind;
         container = (Container) ctx.blockEntity();
@@ -58,15 +57,13 @@ public final class ApplianceLogic implements StationLogic {
     @Override public void onCustomAction(StationContext ctx, Player player, String action, CompoundTag data) {
         if (ctx.level().isClientSide) return;
         if (action.equals("crank") && kind == Appliance.MINCER) {
-            var sample = motion.computeIfAbsent(player.getUUID(), id -> new StirMotion())
+            var sample = motion.computeIfAbsent(player.getUUID(), id -> new CrankMotion())
                 .accept(ctx.level().getGameTime(), data.getFloat("x"), data.getFloat("z"));
-            if (sample == null || sample.impulse() <= 0) return;
-            long now = ctx.level().getGameTime();
-            if (lastCrank != Long.MIN_VALUE && now - lastCrank < 10) return;
+            if (sample == null || !sample.crank()) return;
             var mincer = (MincerBlockEntity) container;
             if (!container.getItem(0).isEmpty() && kind.recipes(ctx.level()).stream()
                     .anyMatch(h -> h.value().getIngredients().stream().anyMatch(i -> i.test(container.getItem(0))))) {
-                mincer.crank(); lastCrank = now;
+                mincer.crank();
             }
         } else if (kind == Appliance.STOVE && action.equals("ignite")) {
             var stove=(StoveBlockEntity)container;boolean was=stove.isLit();stove.ignite();

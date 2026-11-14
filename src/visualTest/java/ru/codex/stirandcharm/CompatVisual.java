@@ -1,5 +1,6 @@
 package ru.codex.stirandcharm;
 import com.mojang.logging.LogUtils;
+import net.minecraft.nbt.CompoundTag;
 import com.pockyl.diegesis.api.client.DiegesisClient;
 import com.pockyl.diegesis.impl.client.DiegesisClientRuntime;
 import com.pockyl.diegesis.impl.client.focus.Projector;
@@ -21,7 +22,7 @@ public final class CompatVisual {
     private static int ticks;
     private static final String[] BLOCKS={"farm_and_charm:cutting_board","candlelight:cooking_pan","candlelight:cooking_pot","farm_and_charm:roaster","bakery:small_cooking_pot","farm_and_charm:cooking_pot"};
     private static final BlockPos[] POS={new BlockPos(0,70,0),new BlockPos(2,70,0),new BlockPos(-2,70,0),new BlockPos(4,70,0),new BlockPos(-4,70,0),new BlockPos(6,70,0)};
-    private static void shot(Minecraft mc,String name){Screenshot.grab(mc.gameDirectory,"handily-051-"+name+".png",mc.getMainRenderTarget(),msg -> LogUtils.getLogger().info("Compat screenshot: {}",msg.getString()));}
+    private static void shot(Minecraft mc,String name){Screenshot.grab(mc.gameDirectory,"handily-060-"+name+".png",mc.getMainRenderTarget(),msg -> LogUtils.getLogger().info("Compat screenshot: {}",msg.getString()));}
     private static void open(Minecraft mc,int i){
         if(DiegesisClient.isFocused())DiegesisClientRuntime.goOver(POS[i],.35F);
         else DiegesisClientRuntime.onUseBlock(mc.player,net.minecraft.world.InteractionHand.MAIN_HAND,
@@ -85,16 +86,39 @@ public final class CompatVisual {
         if(ticks==700)com.pockyl.diegesis.impl.client.focus.FocusController.get().requestExit();
         if(ticks==735)mc.getSingleplayerServer().execute(()->mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst().connection.teleport(2.2,70,.5,90,45));
         if(ticks==770)open(mc,0);
+        if(ticks==800)mc.getSingleplayerServer().execute(()->{
+            var p=mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst();
+            p.inventoryMenu.setCarried(new ItemStack(Items.BEETROOT,8));
+            p.inventoryMenu.broadcastChanges();
+        });
+        if(ticks==820)shot(mc,"carried-east");
         if(ticks==825){
             var view=DiegesisClient.station(POS[0]).orElseThrow();
             var camera=Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
             if(camera.x < POS[0].getX()+.5)throw new IllegalStateException("Board did not open from the east side: "+camera);
             LogUtils.getLogger().info("HANDILY_CHECK board east camera side: PASS at {}",camera);shot(mc,"board-east");
         }
-        if(ticks==850)com.pockyl.diegesis.impl.client.focus.FocusController.get().requestExit();
-        if(ticks==875)mc.getSingleplayerServer().execute(()->{
+        if(ticks==830)mc.getSingleplayerServer().execute(()->{
+            var level=mc.getSingleplayerServer().overworld();var p=mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst();
+            var board=(CuttingBoardBlockEntity)level.getBlockEntity(POS[0]);
+            board.startCut(ItemStack.EMPTY);board.setContents(ItemStack.EMPTY);board.setKnife(ItemStack.EMPTY);
+            ((BoardSelection)board).handily$recipe(null);
+            p.inventoryMenu.setCarried(ItemStack.EMPTY);p.getInventory().clearContent();
+            var holder=BoardRecipes.all(level).stream().filter(r -> r.value() instanceof net.satisfy.farm_and_charm.core.recipe.CuttingBoardAssemblyRecipe a
+                && a.getIngredients().stream().allMatch(i -> i.getItems().length>0)).findFirst().orElseThrow();
+            for(var ingredient:holder.value().getIngredients())p.getInventory().add(ingredient.getItems()[0].copyWithCount(1));
+            p.inventoryMenu.broadcastChanges();
+        });
+        if(ticks==840)DiegesisClient.station(POS[0]).ifPresent(view -> {
+            var holder=BoardRecipes.all(view.level()).stream().filter(r -> r.value() instanceof net.satisfy.farm_and_charm.core.recipe.CuttingBoardAssemblyRecipe a
+                && a.getIngredients().stream().allMatch(i -> i.getItems().length>0)).findFirst().orElseThrow();
+            var tag=new CompoundTag();tag.putString("recipe",holder.id().toString());
+            view.sendAction("fill",tag);
+        });
+        if(ticks==875)shot(mc,"assembly");
+        if(ticks==890)com.pockyl.diegesis.impl.client.focus.FocusController.get().requestExit();
+        if(ticks==895)mc.getSingleplayerServer().execute(()->{
             var level=mc.getSingleplayerServer().overworld();
-
             mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst().connection.teleport(-1.5,70,-1.2,0,55);
         });
         if(ticks==910)shot(mc,"candlelight-world-floor");

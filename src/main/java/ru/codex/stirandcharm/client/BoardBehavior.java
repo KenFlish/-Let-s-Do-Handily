@@ -6,6 +6,9 @@ import com.pockyl.diegesis.api.scene.Visual;
 import com.pockyl.diegesis.api.event.SceneEvent;
 import com.pockyl.diegesis.api.state.StationState;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
+import com.pockyl.diegesis.api.client.DiegesisParticles;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.sounds.SoundEvents;
@@ -25,7 +28,11 @@ final class BoardBehavior implements StationBehavior {
     private List<ItemVoxels.Cut> cuts=List.of();
     private MeshShape marksShape;
     private int iconGeneration=-1,invStamp=-1,carriedStamp=0;
-    public void onSceneReady(StationView view) {view.node("book_open").ifPresent(n -> n.setPainter(book));ApproachCamera.open(view);}
+    private final List<Step> steps=new ArrayList<>();
+    private float clock,assembling;
+    private ItemStack assemblyDish=ItemStack.EMPTY;
+    private record Step(float at,Runnable run){}
+    public void onSceneReady(StationView view) {view.node("book_open").ifPresent(n -> n.setPainter(book));view.node("dish").ifPresent(n -> n.setVisible(false));clock=0;steps.clear();assembling=0;ApproachCamera.open(view);}
     public void onOpen(StationView view) {
         view.setInventoryFilter(null);ApproachCamera.open(view);book.opened(view);
         var player=Minecraft.getInstance().player;
@@ -33,16 +40,32 @@ final class BoardBehavior implements StationBehavior {
             var tag=new CompoundTag();tag.putInt("from",player.getInventory().selected);tag.putBoolean("one",false);view.sendAction("place",tag);
         }
     }
-    public void onClose(StationView view) {book.shut(view);}
+    public void onClose(StationView view) {book.shut(view);steps.clear();assembling=0;view.node("dish").ifPresent(n -> n.setVisible(false));}
     public void onStateChanged(StationView view,StationState.Changes changes){book.invalidate();}
+    @Override public void onEffect(StationView view,net.minecraft.resources.ResourceLocation effect,String node,CompoundTag data){
+        if(effect.equals(StirAndCharm.id("assembled"))){
+            var layers=new ArrayList<ItemStack>();
+            var list=data.getList("layers",Tag.TAG_COMPOUND);
+            for(int i=0;i<list.size();i++){var stack=ItemStack.parseOptional(view.level().registryAccess(),list.getCompound(i));if(!stack.isEmpty())layers.add(stack);}
+            var dish=data.contains("dish")?ItemStack.parseOptional(view.level().registryAccess(),data.getCompound("dish")):ItemStack.EMPTY;
+            assembled(view,data.getString("finish"),layers,dish);
+        }
+    }
     public void tick(StationView view){
         var player=Minecraft.getInstance().player;if(player==null)return;
         int inv=player.getInventory().getTimesChanged(),carried=player.inventoryMenu.getCarried().hashCode();
         if(inv!=invStamp||carried!=carriedStamp){invStamp=inv;carriedStamp=carried;book.invalidate();}
     }
     public void frame(StationView view,float dt) {
+        clock+=dt;
+        if(!steps.isEmpty()){
+            var due=steps.stream().filter(step -> step.at()<=clock).toList();
+            steps.removeAll(due);
+            due.forEach(step -> step.run().run());
+        }
+        if(assembling>0)assembling=Math.max(0,assembling-dt);
         var results=view.state().getItems("result");
-        for(int i=0;i<results.length;i++){boolean present=!results[i].isEmpty();view.node("result_"+i).ifPresent(n -> {n.setVisible(view.isFocused() && present);n.setEnabled(view.isFocused() && present);});}
+        for(int i=0;i<results.length;i++){boolean present=!results[i].isEmpty();view.node("result_"+i).ifPresent(n -> {n.setVisible(view.isFocused() && present && assembling<=0);n.setEnabled(view.isFocused() && present);});}
         chopAge+=dt;
         int generation=ItemVoxels.generation();
         if(generation!=iconGeneration){iconGeneration=generation;meshes.clear();cutsKey="";marksKey="";}
@@ -52,24 +75,27 @@ final class BoardBehavior implements StationBehavior {
         boolean knife=!tool.isEmpty(), focused=view.isFocused();
         var player=Minecraft.getInstance().player;
         view.setCarriedHidden(player!=null && !pending.isEmpty() && BoardTools.supports(player.inventoryMenu.getCarried(),pending));
-        int chops=(int)view.state().getControl("chops"),total=pending.isEmpty()?1:required(view,tool,pending);
+        int chops=(int)view.state().getControl("chops"),total=pending.isEmpty()?1:required(view);
         view.node("surface").ifPresent(n -> {n.setVisible(focused);n.setEnabled(focused);});
         view.node("mouth").ifPresent(n -> {n.setVisible(focused);n.setEnabled(focused);});
         boolean carved=!parked.isEmpty() && pending.isEmpty();
         view.node("carved").ifPresent(n -> {n.setVisible(view.isInUse() && carved);if(carved)n.setVisual(Visual.ofItem(parked.getItem()).withAnchor(new Vector3f(8,8,8)));});
-        String itemKey=pending.getItem()+":"+pending.getComponents().hashCode()+":"+chops+":"+total;
+        String itemKey=pending.getItem()+":"+pending.getComponents().hashCode()+":"+chops+":"+total+":"+view.state().data().get("spots")+":"+view.state().data().get("angles");
         if(!itemKey.equals(cutsKey)){
             cutsKey=itemKey;cuts=new ArrayList<>();
-            for(int i=0;i<Math.min(chops,32);i++) cuts.add(line(pending,i,total));
+            for(int i=0;i<Math.min(chops,32);i++) cuts.add(mark(view,pending,i));
         }
         mesh(view,"food",pending,BoardTools.ITEM_SIZE,cuts,chops,total);
         var layers=view.state().getItems("ingredients");
         for(int i=0;i<9;i++) mesh(view,"layer_"+i,layers[i],8,List.of(),0,0);
-        ItemVoxels.Cut target=line(pending,chops,total);
+        if(assembling<=0) for (int i=0;i<9;i++) view.node("layer_"+i).ifPresent(n -> ContentFacing.turn(view,n));
+        view.node("food").ifPresent(n -> ContentFacing.turn(view,n));
+        ItemVoxels.Cut target=mark(view,pending,chops);
         if(!marksKey.equals(itemKey)){marksKey=itemKey;marksShape=marks(pending,target);}
         view.node("marks").ifPresent(n -> {
             n.setVisible(focused && !pending.isEmpty());
             if(marksShape!=null){n.setShape(marksShape,ResourceLocation.parse("minecraft:block/white_concrete"),true);n.setTint(0xC0FFFFFF);}
+            ContentFacing.turn(view,n);
         });
         var cursor=view.cursorOn(1.1F);
         float wantX=BoardTools.CENTER_X,wantZ=3;
@@ -87,7 +113,7 @@ final class BoardBehavior implements StationBehavior {
             view.node("knife_model").ifPresent(n -> {if(!tool.isEmpty())n.setVisual(Visual.ofItem(tool.getItem()).withAnchor(new Vector3f(8,8,8)));});
         }
         float dip=chopAge<.2F ? (float)Math.sin(chopAge/.2F*Math.PI)*2.5F : 0;
-        view.node("knife_turn").ifPresent(n -> {n.setVisible(view.isInUse() && knife && !pending.isEmpty());n.moveTo(knifeX-BoardTools.CENTER_X,3-dip,knifeZ-BoardTools.CENTER_Z,0);n.rotateTo(0,-(float)Math.toDegrees(target.angle()),0,0);});
+        view.node("knife_turn").ifPresent(n -> {n.setVisible(view.isInUse() && knife && !pending.isEmpty());n.moveTo(knifeX-BoardTools.CENTER_X,3-dip,knifeZ-BoardTools.CENTER_Z,0);n.rotateTo(0,ContentFacing.yaw(view)-(float)Math.toDegrees(target.angle()),0,0);});
         book.frame(view,dt);
     }
     private static ItemStack tool(StationView view) {
@@ -100,9 +126,8 @@ final class BoardBehavior implements StationBehavior {
         for(int i=0;i<p.getInventory().getContainerSize();i++)if(BoardTools.supports(p.getInventory().getItem(i),food))return p.getInventory().getItem(i);
         return ItemStack.EMPTY;
     }
-    private static int required(StationView view,ItemStack tool,ItemStack pending) {
-        return BoardRecipes.cut(view.level(),pending)
-            .map(h -> net.satisfy.farm_and_charm.core.util.Strippables.strip(pending).isPresent()?2:CuttingBoardBlockEntity.requiredChops(tool,h.value())).orElse(1);
+    private static int required(StationView view) {
+        return Math.max(1,(int)view.state().getControl("required"));
     }
     private static MeshShape marks(ItemStack pending,ItemVoxels.Cut target) {
         if(pending.isEmpty())return null;
@@ -118,11 +143,21 @@ final class BoardBehavior implements StationBehavior {
         }
         return shape.build();
     }
-    private static ItemVoxels.Cut line(ItemStack item,int mark,int total) {
+    private static ItemVoxels.Cut mark(StationView view,ItemStack item,int mark) {
         if(item.isEmpty())return new ItemVoxels.Cut(0,0,0);
+        var data=view.state().data();
+        var spots=data.getList("spots",Tag.TAG_FLOAT);
+        var angles=data.getList("angles",Tag.TAG_FLOAT);
+        int style=data.getInt("style");
+        float spot=mark<spots.size()?spots.getFloat(mark):(mark+1F)/(Math.max(1,data.getInt("required"))+1F);
+        float angle=mark<angles.size()?angles.getFloat(mark):0F;
+        return line(item,style,spot,angle);
+    }
+    private static ItemVoxels.Cut line(ItemStack item,int style,float spot,float angle) {
         var axis=ItemVoxels.icon(item).map(icon -> icon.axis(BoardTools.ITEM_SIZE)).orElse(ItemVoxels.Axis.square(3));
-        float[] at=axis.at((mark+1F)/(Math.max(1,total)+1F));
-        float lean=(mark%2==0 ? .6F : -.45F)*(axis.elongation()>=1.4F ? .35F : .85F);
+        if(style==BoardCutPlan.Style.WEDGES.ordinal()) return new ItemVoxels.Cut(axis.x(),axis.z(),ItemVoxels.Axis.normalized(angle));
+        float[] at=axis.at(spot);
+        float lean=style==BoardCutPlan.Style.ACROSS.ordinal()?angle*(axis.elongation()>=1.4F?.35F:.85F):0F;
         return new ItemVoxels.Cut(at[0],at[1],ItemVoxels.Axis.normalized(axis.across()+lean));
     }
     private void mesh(StationView view,String node,ItemStack item,float size,List<ItemVoxels.Cut> cuts,int chop,int total) {
@@ -166,9 +201,47 @@ final class BoardBehavior implements StationBehavior {
     private void chop(StationView view) {
         long now=System.nanoTime();if(now-lastClick<200_000_000L)return;
         var cursor=view.cursorOn(1.1F);if(cursor.isEmpty())return;
-        int mark=(int)view.state().getControl("chops"),total=required(view,tool(view),view.state().getItems("pending")[0]);
+        int mark=(int)view.state().getControl("chops");
         var p=cursor.get();chopAge=0;lastClick=now;
-        if(p.x<1 || p.x>11 || p.z<3 || p.z>13 || Math.abs(line(view.state().getItems("pending")[0],mark,total).distance(p.x-BoardTools.CENTER_X,p.z-BoardTools.CENTER_Z))>1.2F) {view.playSound(SoundEvents.WOOD_HIT,"food",.3F,1.5F);return;}
-        var tag=new CompoundTag();tag.putInt("mark",mark);tag.putFloat("x",p.x);tag.putFloat("z",p.z);view.sendAction("chop",tag);
+        if(p.x<1 || p.x>11 || p.z<3 || p.z>13 || Math.abs(mark(view,view.state().getItems("pending")[0],mark).distance(p.x-BoardTools.CENTER_X,p.z-BoardTools.CENTER_Z))>1.2F) {view.playSound(SoundEvents.WOOD_HIT,"food",.3F,1.5F);return;}
+        var tag=new CompoundTag();tag.putInt("mark",mark);tag.putFloat("at",p.z);view.sendAction("chop",tag);
+    }
+
+    private void after(float seconds,Runnable run){steps.add(new Step(clock+Math.max(0,seconds),run));}
+    private static void display(NodeView node,ItemStack stack,float size){
+        if(stack.isEmpty()){node.setVisible(false);return;}
+        var icon=ItemVoxels.icon(stack);
+        if(icon.isPresent()){node.scaleTo(1,0);node.moveTo(0,0,0,0);node.setShape(ItemVoxels.build(icon.get(),size,List.of(),0),icon.get().sprite(),true);}
+        else {node.setVisual(Visual.ofItem(stack.getItem()).withAnchor(new Vector3f(8,8,8)));node.scaleTo(.4F,0);node.moveTo(0,3.2F,0,0);}
+        node.setVisible(true);
+    }
+    /** HOD-like finish: the layers come together, then the dish pops up in their place. */
+    private void assembled(StationView view,String finish,List<ItemStack> layers,ItemStack dish){
+        assembling=1.6F;
+        for(int i=0;i<9;i++){
+            var node=view.node("layer_"+i);if(node.isEmpty())continue;
+            var stack=i<layers.size()?layers.get(i):ItemStack.EMPTY;
+            if(stack.isEmpty()){node.get().setVisible(false);continue;}
+            display(node.get(),stack,8);
+            final int index=i;
+            after(.04F*i,() -> {
+                node.get().hopTo(0,0,0,finish.equals("TOSS")?2.5F:1.4F,.22F);
+                if(finish.equals("TOSS"))node.get().rotateTo(25,(index%2==0?1:-1)*70,15,.22F);
+            });
+            after(.55F,() -> {node.get().scaleTo(.08F,.3F);node.get().moveTo(0,-.03F*index,0,.3F);});
+            after(.85F,()->node.get().setVisible(false));
+        }
+        after(.68F,() -> {
+            var node=view.node("dish");if(node.isEmpty())return;
+            display(node.get(),dish,8);
+            node.get().scaleTo(.2F,0);
+            view.spawnParticles(DiegesisParticles.DUST,new Vector3f(6,2.4F,8),new Vector3f(0,2.2F,0),2.5F,12,0xFFFFFFFF);
+            view.spawnParticles(DiegesisParticles.GLINT,new Vector3f(6,2.6F,8),new Vector3f(0,1.6F,0),2F,6,0xFFFFE9A0);
+            view.playSound(SoundEvents.ITEM_PICKUP,"surface",.7F,1.1F);
+        });
+        after(.78F,() -> {
+            view.node("dish").ifPresent(n -> {n.setVisible(true);n.scaleTo(1,.18F);n.hopTo(0,1.2F,0,2F,.22F);});
+        });
+        after(1.45F,() -> view.node("dish").ifPresent(n -> n.setVisible(false)));
     }
 }

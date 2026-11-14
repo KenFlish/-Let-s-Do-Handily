@@ -1,6 +1,9 @@
 {
   "work_plane": 4,
   "idle_visible": false,
+  "clear_view": {
+    "blocks": false
+  },
   "camera": {
     "position": [
       8,
@@ -152,6 +155,16 @@
         8
       ],
       "pickable": false
+    },
+    {
+      "id": "dish",
+      "pos": [
+        6,
+        1.05,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
     },
     {
       "id": "knife_turn",

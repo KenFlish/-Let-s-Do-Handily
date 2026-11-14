@@ -69,7 +69,7 @@ for bowl in [False, True]:
     nodes.append({'id': 'book_open', 'pos': [16.33, 21.22, -4], 'rotation': [-50, 0, 0], 'scale': .69,
                   'hidden': True, 'collider': {'from': [-4.4, -.4, -3.9], 'to': [4.4, 1.4, 3.9]}})
     scene = {
-        'work_plane': 14, 'idle_visible': False,
+        'work_plane': 14, 'idle_visible': False, 'clear_view': {'blocks': False},
         'camera': {'position': [8, 41, -21], 'target': [8, 6.5, 8], 'fov': 30,
                    'neighbors': {'enabled': False}},
         'interface': {'hide_player': True, 'inventory_panel': False, 'outline_color': '#FFFFE8C0', 'shadows': False,
@@ -140,6 +140,7 @@ board['nodes'] += [
     {'id': 'carved', 'pos': [6, 3.5, 8], 'rotation': [0, 25, -147], 'scale': .5, 'pickable': False},
     {'id': 'food', 'pos': [6, 1.05, 8], 'pickable': False},
     {'id': 'marks', 'pos': [6, 1.05, 8], 'pickable': False},
+    {'id': 'dish', 'pos': [6, 1.05, 8], 'pickable': False, 'hidden': True},
     {'id': 'knife_turn', 'pos': [6, 1, 8], 'pickable': False, 'children': [
         {'id': 'knife_model', 'rotation': [20, 0, -135], 'scale': .45, 'pickable': False}]},
 ]
