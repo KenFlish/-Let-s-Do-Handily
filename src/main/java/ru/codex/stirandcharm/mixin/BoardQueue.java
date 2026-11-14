@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.gen.Invoker;
 /** Keep queued input in the native saved pending slot; one native completion consumes one item. */
 @Mixin(CuttingBoardBlockEntity.class)
-public abstract class BoardQueue implements ru.codex.stirandcharm.BoardSelection {
+public abstract class BoardQueue implements ru.codex.stirandcharm.BoardSelection, ru.codex.stirandcharm.ChopState {
     @Shadow private ItemStack pending;
     @Unique private ItemStack handily$queued=ItemStack.EMPTY;
     @Unique private boolean handily$valid;
@@ -20,6 +20,7 @@ public abstract class BoardQueue implements ru.codex.stirandcharm.BoardSelection
     @Inject(method="loadAdditional",at=@At("TAIL"),remap=false)
     private void handily$load(net.minecraft.nbt.CompoundTag tag,net.minecraft.core.HolderLookup.Provider registries,CallbackInfo ci){handily$recipe=net.minecraft.resources.ResourceLocation.tryParse(tag.getString("HandilyRecipe"));}
     @Invoker("markUpdated") public abstract void handily$sync();
+    @org.spongepowered.asm.mixin.gen.Accessor("pendingChops") public abstract void handily$pendingChops(int value);
     @Inject(method="chopPending",at=@At("HEAD"),remap=false)
     private void handily$before(Level level,CallbackInfo ci){
         handily$queued=pending.copy();

@@ -296,10 +296,14 @@ public final class BoardLogic implements StationLogic {
 
         ItemStack parked = board.getKnife();
         if (tool.slot != -2) board.setKnife(tool.stack.copy());
+        // The marks are ours; the native block only counts its own pending chops. One native
+        // cut per item finishes the batch, without spending extra time on each item's marks.
+        int required = CuttingBoardBlockEntity.requiredChops(tool.stack, recipe.get().value());
         int done = 0;
         CAPTURE.set(c);
         try {
             while (done < BATCH && board.isCutting() && room(c, outputs(recipe.get().value()))) {
+                ((ChopState) board).handily$pendingChops(Math.max(0, required - 1));
                 board.chopPending(c.level());
                 done++;
             }
