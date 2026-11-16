@@ -77,7 +77,10 @@ public final class ApplianceLogic implements StationLogic {
             ctx.level().playSound(null,ctx.pos(),state.getValue(RoasterLid.OPEN)?net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_CLOSE:net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_OPEN,net.minecraft.sounds.SoundSource.BLOCKS,.45F,1.3F);
             container.setChanged(); tick(ctx);
         } else if (kind == Appliance.ROASTER && action.equals("collect")) {
+            if(!accessible(ctx))return;
+            var meal=container.getItem(7).copy();var vessel=((MealVessel)container).handily$vessel().copy();
             int taken=MealServing.collect(player,container,data.getBoolean("one"),data.getBoolean("inventory"));
+            if(taken>0)ServingEffects.served(ctx,meal,vessel);
             if (taken>0 && ctx.level() instanceof ServerLevel level)
                 ((RoasterBlockEntity)container).dropExperience(level,Vec3.atCenterOf(ctx.pos()));
             else if (taken==0 && !container.getItem(7).isEmpty()) player.displayClientMessage(Component.translatable("handson_farm_charm.serving_failed"),true);

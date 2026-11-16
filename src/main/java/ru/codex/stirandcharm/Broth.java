@@ -24,12 +24,13 @@ public final class Broth {
     }
 
     public static boolean present(Container container) {
-        return !container.getItem(7).isEmpty() || !contents(container).isEmpty();
+        return true;
     }
 
     public static int amount(Container container) {
-        return present(container) ? AMOUNT : 0;
+        return !container.getItem(7).isEmpty()?AMOUNT:Math.min(70,58+contents(container).size()*2);
     }
 
+    public static float height(boolean candlelight,int amount){return 2.05F+(candlelight?8.9F:6.9F)*Math.clamp(amount,0,100)/100F;}
     private Broth() {}
 }

@@ -37,8 +37,13 @@ public final class BoardDishes {
     }
     public record Meal(ItemStack result,List<ItemStack> remainders) {}
     public static Optional<Meal> make(Level level,Recipe<?> recipe,List<ItemStack> items) {
-        if(items.size()!=needs(recipe).size() || !accepts(recipe,items))return Optional.empty();
+        if(items.size()!=needs(recipe).size() || !(recipe instanceof CuttingBoardAssemblyRecipe) && !accepts(recipe,items))return Optional.empty();
         if(recipe instanceof CuttingBoardAssemblyRecipe a) {
+            if(!a.isOrdered()){
+                var sorted=new ArrayList<ItemStack>();
+                if(!order(needs(a),0,items,new boolean[items.size()],sorted))return Optional.empty();
+                items=sorted;
+            }
             var input=new CuttingBoardAssemblyRecipe.Input(items);
             return a.matches(input,level) ? Optional.of(new Meal(a.assemble(input,level.registryAccess()),List.of())) : Optional.empty();
         }

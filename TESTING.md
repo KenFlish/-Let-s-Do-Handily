@@ -1,47 +1,56 @@
-# Handily 0.6.2 — проверка выпуска
+# Handily 0.6.3 release verification
 
-Среда: Windows, Java 21.0.7, Minecraft 1.21.1, NeoForge 21.1.265.
-Обязательные моды: Farm & Charm 1.1.29, Diegesis 1.0.0-beta.8, Architectury 13.0.11. Foundation 1.0.7 вложен в Farm & Charm.
+Environment: Windows, Java 21.0.7, Minecraft 1.21.1, NeoForge 21.1.265.
+Required mods: Farm & Charm 1.1.29, Diegesis 1.0.0-beta.8 and Architectury 13.0.11. Farm & Charm includes Foundation 1.0.7.
+Compatibility set: Candlelight 2.1.15, Bakery 2.1.11, HerbalBrews 1.1.4, Hands-On Delight 1.4.0 and Farmer's Delight 1.3.4.
 
-## Сервер
+## Dedicated server
 
 ```text
 gradlew.bat runGameTestServer -PgameTests --offline --console=plain --no-watch-fs --no-problems-report
 gradlew.bat runGameTestServer -PgameTests -Pcompat --offline --console=plain --no-watch-fs --no-problems-report
 ```
 
-Оба отдельных GameTest-сервера завершились успешно: **36 из 36** обязательных тестов в каждом прогоне. Без соответствующих модов проверки необязательных интеграций пропускаются.
+Both separate runs passed **41 of 41 required tests**. Tests for optional integrations return without exercising that integration when its mod is absent. These runs use the real native block entities and inventories.
 
-Набор совместимости: Candlelight 2.1.15, Bakery 2.1.11, HerbalBrews 1.1.4, Hands-On Delight 1.4.0, Farmer's Delight 1.3.4.
+Covered cases include:
 
-Новые проверки: сахар остаётся в настоящем инвентаре и извлекается целой стопкой; полный инвентарь не уничтожает налитый ингредиент; повторный возврат не дублирует ведро; видимый сахар не расходуется при возврате налитого; сервер сбрасывает состояние перемешивания после остановки и отклоняет NaN.
+- Native cutting recipes, knife and cleaver durability, byproducts, batches of 16, rejected invalid/early/repeated cuts and full-inventory safety.
+- Saved cut plans and marks, legacy board-output NBT persistence and migration, layer return and interrupted assembly state.
+- Candlelight salad starting with cheese, unordered matching, vessel completion, batches, missing ingredients, remainders and inventory capacity before consumption.
+- Clear-water baseline, mixture persistence, heat requirements, native cooking, recovery of an entire sugar stack and a poured ingredient without duplication or loss on a full inventory.
+- Serving one portion or a Shift batch, cursor and inventory vessels, the final vessel freeing an inventory slot, missing vessels and blocked destinations.
+- Two server-side players attempting to take the last portion in sequence; only one receives it. This is not a test with two live network clients.
+- Native roaster, Candlelight pan/pot, bowl, stove and Bakery recipes; Bakery jar components, native dumping and full-inventory rejection.
+- Disabled mincer/kettle scenes and the mincer's native crank progression.
 
-Также проверены нарезка ножом и тесаком, прочность, побочные продукты, партия 16, заполненный выход, сборка по слоям и партиям, возврат слоёв и сохранение содержимого, нехватка ингредиентов, венчик миски, топливо печи, рецепты жаровни и сковородки Candlelight, нагрев и отсутствие нагрева, готовка за 35 секунд и ускорение перемешиванием, жидкость до первого перемешивания, выдача в посуду и полный инвентарь, форма и рецепты котла Candlelight, помешивание и банки Bakery. Сцены мясорубки и чайников отсутствуют; штатная мясорубка вращается и расходует сырьё собственным таймером.
-
-## Клиент
+## Client
 
 ```text
-gradlew.bat runClient -PvisualTests -PcompatVisual -Pcompat --offline --console=plain --no-watch-fs --no-problems-report
+gradlew.bat runClient -PvisualTests -PbaseVisual --offline --console=plain --no-watch-fs --no-problems-report
+gradlew.bat runClient -PvisualTests -PboardMatrix -Pcompat --offline --console=plain --no-watch-fs --no-problems-report
 gradlew.bat runClient -PvisualTests -PcompatVisual -Pcompat -PpotVisualOnly --offline --console=plain --no-watch-fs --no-problems-report
+gradlew.bat runClient -PvisualTests -PcompatVisual -Pcompat --offline --console=plain --no-watch-fs --no-problems-report
 ```
 
-Основная последовательность на 0.6.2 прошла проверки размещения еды на доске, камеры с четырёх сторон, восстановления масштаба после обычной и прерванной сборки (1.0), а также отсутствия сцены мясорубки и изменения её штатного угла. Сделаны снимки сковородки, котла Candlelight, жаровни, варенья и жидкости вне сцены.
+The core-only client opened the cooking pot and mixing bowl and completed its water, ingredient and stirring sequence successfully.
 
-Новые проверки котла завершены отдельным запуском `-PpotVisualOnly` с результатом `BUILD SUCCESSFUL`. Через события мыши интерфейса проверены:
+The cutting matrix passed **32 actual mouse-driven cutting cases**: four block facings, four world approach sides and two tools (Farm & Charm cleaver and Farmer's Delight knife). Every case closed and reopened the scene after its first cut, completed the remaining cuts and checked native result quantity. The test also checked that the flat carried cursor is suppressed while the knife is drawn. A case may retry a cut; this does not establish that every cut succeeds on its first click.
 
-- видимый сахар и извлечение всех 32 предметов одним щелчком;
-- захват штатной ложки и круговое движение курсора: ложка наклоняется, сервер получает перемешивание;
-- движение ингредиентов с течением и сохранение их центров внутри границ котла;
-- возврат ведра воды настоящим ПКМ по поверхности супа с пустым курсором.
+The targeted pot/Bakery client run completed all seven checks: retrieving 32 dissolved sugar items with a real right click; spoon tilt and server stirring state; ingredient drift within pot bounds; a single animated pouring hand; poured-ingredient recovery; an offered last inventory vessel serving into inventory with an empty cursor; and hovering/clicking the real Bakery handle to empty the native pot.
 
-Для непрерывного жеста тест использует предусмотренный Diegesis `FocusScreen.forcedMouse`; это эмуляция ввода, а не движение физической мышью человека. Снимки: `handily-060-062-sugar-visible.png`, `handily-060-062-stirring.png`, `handily-060-062-floating.png`.
+Mouse gestures use Diegesis's `FocusScreen.forcedMouse` and actual screen input handlers. These are automated input checks, not manual play. The water bucket in the pouring fixture is only an animation/recovery test: cooking does not require adding water to the clear-water baseline.
 
-В первом расширенном прогоне ошибка стенда разрушала котёл при удалении его опоры. Опора исправлена на камень. В следующем прогоне эмулированный указатель перезаписывался физическим курсором между кадрами; драйвер переведён на `forcedMouse`. Последний целевой прогон прошёл все четыре проверки без исключений. В журнале остаются предупреждения среды WMI и необязательного Sodium.
+The long compatibility tour is **not a passing end-to-end check**. One run passed placement, the east camera, normal and interrupted assembly scale restoration (ratios 1.0 and 1.0000001), native mincer motion, sugar recovery, stirring, drift and pouring, then failed its timed liquid-recovery click. The driver was changed to wait for the recovery control; its next run failed the initial timed board-placement assertion before reaching that change. The separate cutting matrix and targeted pot/Bakery run above passed. The long tour still needs reliable input/synchronization; these failures are not presented as proof that the full interaction sequence is bug-free.
 
-## Сборка и ограничения
+The verification archive contains selected screenshots and extracted success/failure records, including these incomplete tours.
 
-Итоговая сборка: `gradlew.bat build --offline --console=plain --no-watch-fs --no-problems-report`. JAR не содержит тестовых классов, сцены мясорубки и интеграции чайников.
+## Build and limits
 
-Проверки охватывают выбранные рецепты и пути взаимодействия. Не выполнялись полный перебор всех блюд, длительная игра с двумя сетевыми клиентами, шейдеры и полная пользовательская сборка. Жест новой ложки проверен в Farm & Charm; у Candlelight проверены прежние форма, инвентарь, готовка и снимки, отдельного мышиного прогона новой ложки там не было. Работа чайников HerbalBrews не изменялась. Основная пользовательская сборка не изменена.
+```text
+gradlew.bat build --offline --console=plain --no-watch-fs --no-problems-report
+```
 
-Логи, тестовые миры, внешние JAR и учётные данные не входят в архив проекта.
+The release JAR excludes test classes, mincer scenes and kettle scenes. It includes the Hands-On Delight MIT license and attribution. Local logs, worlds, credentials, dependencies and unrelated experimental kettle code are excluded from the project archive.
+
+Coverage uses selected native recipes and interaction paths. It does not exhaust every dish, shader combination, long-running multiplayer session or the user's complete modpack. The new spoon gesture was exercised on Farm & Charm; Candlelight received native recipe/inventory checks and scene screenshots rather than a separate full mouse-driven stirring sequence. HerbalBrews mechanics were not changed. Environment warnings about WMI, absent optional Sodium classes and external mod textures are not claimed as fixed by this release.

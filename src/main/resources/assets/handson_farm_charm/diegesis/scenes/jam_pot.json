@@ -174,63 +174,70 @@
               3.9
             ]
           }
-        },
-        {
-          "id": "result",
-          "pos": [
-            -9,
-            16,
-            -9
-          ],
-          "rotation": [
-            -50,
-            0,
-            0
-          ],
-          "collider": {
-            "from": [
-              -2.3,
-              -0.5,
-              -2.3
-            ],
-            "to": [
-              2.3,
-              0.7,
-              2.3
-            ]
-          }
-        },
-        {
-          "id": "dump",
-          "pos": [
-            -11,
-            3,
-            0
-          ],
-          "scale": 0.14,
-          "visual": {
-            "item": "minecraft:bucket",
-            "anchor": [
-              8,
-              8,
-              8
-            ]
-          },
-          "collider": {
-            "from": [
-              -8,
-              -2,
-              -8
-            ],
-            "to": [
-              8,
-              4,
-              8
-            ]
-          },
-          "tooltip": "handson_farm_charm.jam.dump"
         }
       ]
+    },
+    {
+      "id": "serve_area",
+      "collider": {
+        "from": [
+          4,
+          7.1,
+          4
+        ],
+        "to": [
+          12,
+          7.22,
+          12
+        ]
+      },
+      "tooltip": "handson_farm_charm.serving"
+    },
+    {
+      "id": "offer_vessel",
+      "pos": [
+        8,
+        8,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "arrival",
+      "pos": [
+        8,
+        8,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "recover_preview",
+      "pos": [
+        8,
+        8,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "dump_handle",
+      "collider": {
+        "from": [
+          -2,
+          3,
+          7
+        ],
+        "to": [
+          4,
+          5,
+          9
+        ]
+      },
+      "tooltip": "handson_farm_charm.jam.dump"
     }
   ],
   "captions": {

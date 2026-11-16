@@ -21,6 +21,7 @@ import ru.codex.stirandcharm.BoardAssembly.Made;
 /** Native board owns the cut item, knife, durability and experience; layers and dishes are ours. */
 public final class BoardLogic implements StationLogic {
     private static final ThreadLocal<StationContext> CAPTURE = new ThreadLocal<>();
+    private static final ThreadLocal<Player> COOK = new ThreadLocal<>();
     private static final int BATCH = 16;
     private static final int CHOP_GAP = 4;
 
@@ -35,6 +36,7 @@ public final class BoardLogic implements StationLogic {
             var ctx = CAPTURE.get();
             if (ctx == null || ctx.level() != level || !ctx.pos().equals(pos)) return stack;
             ItemStack left = stack.copy();
+            var cook=COOK.get();if(cook!=null){cook.getInventory().add(left);return left;}
             for (int pass = 0; pass < 2; pass++) for (int i = 0; i < 8 && !left.isEmpty(); i++) {
                 var ref = SlotRef.of("result", i);
                 var old = ctx.state().getItem(ref);
@@ -53,6 +55,13 @@ public final class BoardLogic implements StationLogic {
 
     public BoardLogic(StationContext ctx) {
         board = (CuttingBoardBlockEntity) ctx.blockEntity();
+        var old=ctx.state().getItems("result");var savedOutputs=((BoardSelection)board).handily$outputs();
+        for(int i=0;i<8;i++)if(savedOutputs.get(i).isEmpty() && !old[i].isEmpty())savedOutputs.set(i,old[i].copy());
+        ctx.state().bindSlots("result",new SlotStorage(){
+            public int size(){return 8;}
+            public ItemStack get(int i){return ((BoardSelection)board).handily$outputs().get(i);}
+            public void set(int i,ItemStack stack){((BoardSelection)board).handily$outputs().set(i,stack);((BoardSelection)board).handily$sync();}
+        });
         ctx.state().bindSlots("ingredients", new SlotStorage() {
             public int size() { return 9; }
             public ItemStack get(int i) { return i < board.getItems().size() ? board.getItems().get(i) : ItemStack.EMPTY; }
@@ -90,13 +99,24 @@ public final class BoardLogic implements StationLogic {
     private void restart(StationContext ctx) {
         cutting = board.getPending().copyWithCount(1);
         var recipe = BoardRecipes.cut(ctx.level(), cutting);
-        plan = recipe.map(h -> BoardCutPlan.of(ctx.level(), cutting, h.value())).orElse(null);
-        marks = 0;
+        var saved=((BoardSelection)board).handily$cuts();
+        boolean same=ItemStack.isSameItemSameComponents(cutting,ItemStack.parseOptional(ctx.level().registryAccess(),saved.getCompound("item")));
+        plan=same?BoardCutPlan.load(saved):null;
+        marks=plan==null?0:Math.clamp(saved.getInt("completed"),0,plan.marks()-1);
+        lastChop=plan!=null && saved.contains("last")?saved.getLong("last"):Long.MIN_VALUE;
+        if(plan==null)plan = recipe.map(h -> BoardCutPlan.of(ctx.level(), cutting, h.value())).orElse(null);
+        saveCuts(ctx);
     }
+    private void saveCuts(StationContext c){var saved=plan==null?new CompoundTag():plan.save();if(plan!=null){saved.put("item",cutting.saveOptional(c.level().registryAccess()));saved.putInt("completed",marks);saved.putLong("last",lastChop);}((BoardSelection)board).handily$cuts(saved);}
 
     public boolean mayPlace(StationContext ctx, Player p, SlotRef ref, ItemStack s) { return false; }
     public boolean mayTake(StationContext ctx, Player p, SlotRef ref) { return ref.group().equals("result"); }
-    public void onOpen(StationContext ctx, Player p) { tick(ctx); }
+    public void onOpen(StationContext ctx, Player p) { migrate(ctx,p);tick(ctx); }
+    private void migrate(StationContext c,Player p){
+        for(int i=0;i<8;i++){var ref=SlotRef.of("result",i);var stack=c.state().getItem(ref);if(stack.isEmpty())continue;
+            var left=stack.copy();p.getInventory().add(left);c.state().setItem(ref,left);}
+        p.getInventory().setChanged();p.inventoryMenu.broadcastChanges();
+    }
 
     public void onCustomAction(StationContext ctx, Player player, String action, CompoundTag data) {
         if (ctx.level().isClientSide) return;
@@ -105,11 +125,12 @@ public final class BoardLogic implements StationLogic {
             case "carve" -> carve(ctx, player);
             case "take" -> take(ctx, player);
             case "chop" -> chop(ctx, player, data);
-            case "assemble" -> assemble(ctx, player);
+            case "assemble" -> assemble(ctx, player, data.getBoolean("all")?BATCH:1);
+            case "mode" -> {var tag=ctx.state().data();tag.putBoolean("assembly_mode",data.getBoolean("assembly"));ctx.state().setData(tag);}
             case "fill" -> fill(ctx, player, data);
             default -> {}
         }
-        tick(ctx);
+        migrate(ctx,player);tick(ctx);
         player.inventoryMenu.broadcastChanges();
     }
 
@@ -158,6 +179,7 @@ public final class BoardLogic implements StationLogic {
         int from = tag.contains("from") ? tag.getInt("from") : -1;
         ItemStack s = source(p, from);
         if (s.isEmpty() || BoardTools.canStick(s)) return;
+        if(board.hasKnife() && !InventoryDelivery.fits(p,List.of(board.getKnife().copy()))){refuse(c,s);return;}
         boolean one = tag.getBoolean("one");
         var level = c.level();
         var layers = layers();
@@ -199,12 +221,15 @@ public final class BoardLogic implements StationLogic {
             ItemStack placed = s.split(n);
             consumed(p, from, s);
             board.addItem(placed);
+            placed(c,placed,board.getItems().size()-1);
             sound(c, SoundEvents.ITEM_PICKUP, 1.1F);
             finishIfWanted(c, p);
             return;
         }
 
-        boolean cuttable = BoardRecipes.cut(level, s).isPresent();
+        boolean assembling=c.state().data().getBoolean("assembly_mode") || ((BoardSelection)board).handily$recipe()!=null;
+        boolean startAssembly=BoardAssembly.fits(level,List.of(s.copyWithCount(1)));
+        boolean cuttable = BoardRecipes.cut(level, s).isPresent() && !(assembling && startAssembly);
         if (cuttable) {
             if (board.hasKnife()) give(p, board.takeKnife());
             int n = Math.min(one ? 1 : s.getCount(), BATCH);
@@ -213,12 +238,13 @@ public final class BoardLogic implements StationLogic {
             sound(c, SoundEvents.ITEM_PICKUP, 1.05F);
             return;
         }
-        if (BoardAssembly.isBase(level, s)) {
+        if (startAssembly) {
             if (board.hasKnife()) give(p, board.takeKnife());
             int n = Math.min(one ? 1 : s.getCount(), BATCH);
             ItemStack placed = s.split(n);
             consumed(p, from, s);
             board.addItem(placed);
+            placed(c,placed,board.getItems().size()-1);
             sound(c, SoundEvents.ITEM_PICKUP, 1.1F);
             finishIfWanted(c, p);
             return;
@@ -235,6 +261,8 @@ public final class BoardLogic implements StationLogic {
         boolean wanted = selected != null && selected.equals(complete.get().holder().id());
         if (wanted || !BoardAssembly.canGrow(c.level(), layers)) assemble(c, p);
     }
+    private void placed(StationContext c,ItemStack stack,int index){var tag=new CompoundTag();tag.put("stack",stack.copyWithCount(1).saveOptional(c.level().registryAccess()));tag.putInt("index",index);effect(c,"placed","surface",tag);}
+    private void received(StationContext c,ItemStack stack){var tag=new CompoundTag();tag.put("stack",stack.copyWithCount(1).saveOptional(c.level().registryAccess()));effect(c,"received","surface",tag);}
 
     private void take(StationContext c, Player p) {
         var layers = layers();
@@ -243,19 +271,24 @@ public final class BoardLogic implements StationLogic {
             for (int i = items.size() - 1; i >= 0; i--) {
                 var stack = items.get(i);
                 if (stack.isEmpty()) continue;
+                if(!InventoryDelivery.fits(p,List.of(stack))){refuse(c,stack);return;}
                 items.remove(i);
                 contents(items);
                 give(p, stack.copy());
+                received(c,stack);
                 sound(c, SoundEvents.ITEM_PICKUP, .85F);
                 return;
             }
         }
         if (board.isCutting()) {
             var s = board.getPending().copy();
+            if(!InventoryDelivery.fits(p,List.of(s))){refuse(c,s);return;}
             board.startCut(ItemStack.EMPTY);
             give(p, s);
+            received(c,s);
             restart(c);
         } else if (board.hasKnife()) {
+            if(!InventoryDelivery.fits(p,List.of(board.getKnife()))){refuse(c,board.getKnife());return;}
             give(p, board.takeKnife());
         }
         sound(c, SoundEvents.ITEM_PICKUP, .85F);
@@ -279,16 +312,20 @@ public final class BoardLogic implements StationLogic {
         if (!board.isCutting() || plan == null || lastChop != Long.MIN_VALUE && now - lastChop < CHOP_GAP) return;
         int mark = data.getInt("mark");
         float at = data.getFloat("at");
-        if (mark != marks || !Float.isFinite(at) || at < 0F || at > 16F) { refuse(c, ItemStack.EMPTY); return; }
+        if (mark != marks || !Float.isFinite(at) || at < 0F || at > 16F
+            || !Float.isFinite(data.getFloat("x")) || !Float.isFinite(data.getFloat("z"))
+            || !data.contains("x") || !data.contains("z") || Math.abs(at-data.getFloat("z"))>.01F
+            || (data.getFloat("x")<1 || data.getFloat("x")>11 || data.getFloat("z")<3 || data.getFloat("z")>13)) { refuse(c, ItemStack.EMPTY); return; }
         Tool tool = tool(c, p);
         if (tool == null) { refuse(c, ItemStack.EMPTY); return; }
         var recipe = BoardRecipes.cut(c.level(), board.getPending());
-        if (recipe.isEmpty() || !room(c, outputs(recipe.get().value()))) { refuse(c, ItemStack.EMPTY); return; }
+        if (recipe.isEmpty() || !InventoryDelivery.fits(p, multiplied(outputs(recipe.get().value()),board.getPending().getCount()))) { refuse(c, ItemStack.EMPTY); return; }
 
         float spot = plan.spot(marks), angle = plan.angle(marks);
         lastChop = now;
         marks++;
         if (marks < plan.marks()) {
+            saveCuts(c);
             var tag = new CompoundTag();
             tag.putInt("mark", marks - 1);
             tag.putFloat("spot", spot);
@@ -305,16 +342,16 @@ public final class BoardLogic implements StationLogic {
         // cut per item finishes the batch, without spending extra time on each item's marks.
         int required = CuttingBoardBlockEntity.requiredChops(tool.stack, recipe.get().value());
         int done = 0;
-        CAPTURE.set(c);
+        CAPTURE.set(c);COOK.set(p);
         try {
             while (done < BATCH && board.isCutting() && !board.getKnife().isEmpty()
-                && room(c, outputs(recipe.get().value()))) {
+                && InventoryDelivery.fits(p,outputs(recipe.get().value()))) {
                 ((ChopState) board).handily$pendingChops(Math.max(0, required - 1));
                 board.chopPending(c.level());
                 done++;
             }
         } finally {
-            CAPTURE.remove();
+            CAPTURE.remove();COOK.remove();
             if (tool.slot != -2) {
                 var used = board.takeKnife();
                 if (tool.slot == -1) p.inventoryMenu.setCarried(used);
@@ -329,12 +366,15 @@ public final class BoardLogic implements StationLogic {
         tag.putFloat("angle", angle);
         tag.putBoolean("done", true);
         tag.putInt("count", done);
+        tag.put("stack",recipe.get().value().getResult().saveOptional(c.level().registryAccess()));
         effect(c, "chopped", "item", tag);
+        ((BoardSelection)board).handily$cuts(new CompoundTag());
         restart(c);
         sound(c, SoundEvents.ITEM_PICKUP, 1.2F);
     }
 
-    private void assemble(StationContext c, Player p) {
+    private void assemble(StationContext c,Player p){assemble(c,p,BATCH);}
+    private void assemble(StationContext c, Player p,int limit) {
         if (board.isCutting()) return;
         var layers = layers();
         if (layers.isEmpty()) return;
@@ -343,20 +383,28 @@ public final class BoardLogic implements StationLogic {
         if (selected != null) {
             dish = BoardAssembly.all(c.level()).stream().filter(d -> d.holder().id().equals(selected)).findFirst().orElse(null);
         }
-        if (dish == null) dish = BoardAssembly.complete(c.level(), layers).orElse(null);
+        if (dish == null) dish = BoardAssembly.complete(c.level(), layers).orElseGet(()->BoardAssembly.all(c.level()).stream().filter(d -> BoardAssembly.ready(d,layers)).findFirst().orElse(null));
         if (dish == null) { refuse(c, ItemStack.EMPTY); return; }
-        Made made = BoardAssembly.make(dish, layers, c.level(), BATCH);
-        if (made.rounds() == 0) { refuse(c, ItemStack.EMPTY); return; }
-        if (!room(c, made.dishes())) { refuse(c, ItemStack.EMPTY); return; }
-        contents(List.of());
-        made.remaining().forEach(left -> give(p, left));
-        made.leftovers().forEach(left -> give(p, left));
-        CAPTURE.set(c);
-        try {
-            for (var result : made.dishes()) CuttingBoardBlockEntity.output(c.level(), c.pos(), result.copy());
-        } finally {
-            CAPTURE.remove();
+        var working=new ArrayList<ItemStack>(layers);
+        var planned=InventoryDelivery.copy(p);int vesselSlot=-2,cost=0;
+        if(BoardAssembly.ready(dish,layers)){
+            var finish=((CuttingBoardAssemblyRecipe)dish.holder().value()).getFinisher().orElseThrow();
+            var held=p.inventoryMenu.getCarried();
+            if(finish.test(held))vesselSlot=-1;
+            else for(int i=0;i<36;i++)if(finish.test(planned[i])){vesselSlot=i;break;}
+            if(vesselSlot==-2){refuse(c,ItemStack.EMPTY);return;}
+            var offered=vesselSlot==-1?held:planned[vesselSlot];
+            cost=Math.min(limit,Math.min(offered.getCount(),layers.stream().mapToInt(ItemStack::getCount).min().orElse(0)));
+            working.add(offered.copyWithCount(cost));
         }
+        Made made = BoardAssembly.make(dish, working, c.level(), limit);
+        if (made.rounds() == 0) { refuse(c, ItemStack.EMPTY); return; }
+        if(vesselSlot>=0)planned[vesselSlot].shrink(made.rounds());
+        var delivered=new ArrayList<ItemStack>();delivered.addAll(made.dishes());delivered.addAll(made.leftovers());delivered.addAll(made.remaining());
+        for(var out:delivered)if(!InventoryDelivery.insert(planned,out)){refuse(c,ItemStack.EMPTY);return;}
+        if(vesselSlot==-1){var held=p.inventoryMenu.getCarried();held.shrink(made.rounds());p.inventoryMenu.setCarried(held.isEmpty()?ItemStack.EMPTY:held);}
+        contents(List.of());InventoryDelivery.commit(p,planned);
+        for(var result:made.dishes())result.onCraftedBy(c.level(),p,result.getCount());
         var tag = new CompoundTag();
         tag.putString("finish", dish.finish().name());
         var from = new ListTag();
@@ -409,6 +457,7 @@ public final class BoardLogic implements StationLogic {
         return list;
     }
 
+    private static List<ItemStack> multiplied(List<ItemStack> outputs,int n){return outputs.stream().map(s -> s.copyWithCount(s.getCount()*Math.min(BATCH,n))).toList();}
     private boolean room(StationContext c, List<ItemStack> outputs) {
         var container = new SimpleContainer(8);
         for (int i = 0; i < 8; i++) container.setItem(i, c.state().getItem(SlotRef.of("result", i)).copy());
@@ -417,6 +466,7 @@ public final class BoardLogic implements StationLogic {
     }
 
     public void tick(StationContext c) {
+        if(c.level().getGameTime()%20==0)for(var player:c.users())migrate(c,player);
         var pending = board.getPending();
         if (!ItemStack.isSameItemSameComponents(pending, cutting)) restart(c);
         int required = plan == null ? 1 : plan.marks();
@@ -427,11 +477,16 @@ public final class BoardLogic implements StationLogic {
         var recipeId = ((BoardSelection) board).handily$recipe();
         String selected = recipeId == null ? "" : recipeId.toString();
         String dish = BoardAssembly.complete(c.level(), layers()).map(d -> d.holder().id().toString()).orElse("");
-        boolean changed = !data.getString("selected_recipe").equals(selected) || !data.getString("dish").equals(dish)
+        boolean finishReady=BoardAssembly.all(c.level()).stream().anyMatch(d -> BoardAssembly.ready(d,layers()));
+        var finishDish=BoardAssembly.all(c.level()).stream().filter(d -> BoardAssembly.ready(d,layers())).findFirst();
+        String vessel=finishDish.flatMap(d -> ((CuttingBoardAssemblyRecipe)d.holder().value()).getFinisher()).filter(i -> i.getItems().length>0).map(i -> net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(i.getItems()[0].getItem()).toString()).orElse("");
+        boolean changed = data.getBoolean("finish_ready")!=finishReady || !data.getString("vessel").equals(vessel) || !data.getString("selected_recipe").equals(selected) || !data.getString("dish").equals(dish)
             || !data.contains("book") || data.getBoolean("book") != Settings.BOOK.get()
             || data.getInt("marks") != marks || data.getInt("required") != required
             || data.getInt("style") != (plan == null ? -1 : plan.style().ordinal());
         if (changed) {
+            data.putBoolean("finish_ready",finishReady);data.putString("vessel",vessel);
+            var vessels=new ListTag();finishDish.flatMap(d -> ((CuttingBoardAssemblyRecipe)d.holder().value()).getFinisher()).ifPresent(f -> {for(var item:f.getItems())vessels.add(net.minecraft.nbt.StringTag.valueOf(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item.getItem()).toString()));});data.put("vessels",vessels);
             data.putString("selected_recipe", selected);
             data.putString("dish", dish);
             data.putBoolean("book", Settings.BOOK.get());

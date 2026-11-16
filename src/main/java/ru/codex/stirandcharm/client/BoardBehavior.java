@@ -19,6 +19,7 @@ import net.satisfy.farm_and_charm.core.block.entity.CuttingBoardBlockEntity;
 
 /** Pixel pieces and a knife following the pointer, adapted to the native Farm & Charm board. */
 final class BoardBehavior implements StationBehavior {
+    private final ServingGesture serving=new ServingGesture("assemble",2);
     private final RecipeBook book=new RecipeBook(new BoardCookbook());
     private final Map<String,String> meshes=new HashMap<>();
     private long lastClick;
@@ -29,7 +30,7 @@ final class BoardBehavior implements StationBehavior {
     private MeshShape marksShape;
     private int iconGeneration=-1,invStamp=-1,carriedStamp=0;
     private final List<Step> steps=new ArrayList<>();
-    private float clock,assembling;
+    private float clock,assembling,partAge=1;
     private ItemStack assemblyDish=ItemStack.EMPTY;
     private record Step(float at,Runnable run){}
     public void onSceneReady(StationView view) {view.node("book_open").ifPresent(n -> n.setPainter(book));view.node("dish").ifPresent(n -> n.setVisible(false));clock=0;steps.clear();assembling=0;reset(view);ApproachCamera.open(view);}
@@ -44,6 +45,16 @@ final class BoardBehavior implements StationBehavior {
     public void onClose(StationView view) {book.shut(view);steps.clear();assembling=0;reset(view);}
     public void onStateChanged(StationView view,StationState.Changes changes){book.invalidate();if(assembling<=0)reset(view);}
     @Override public void onEffect(StationView view,net.minecraft.resources.ResourceLocation effect,String node,CompoundTag data){
+        if(effect.equals(StirAndCharm.id("chopped")))partAge=0;
+        if(effect.equals(StirAndCharm.id("placed"))){
+            int index=data.getInt("index");var from=view.cursorOn(9).orElse(new Vector3f(6,9,8));
+            after(.08F,()->view.node("layer_"+index).ifPresent(n->{if(assembling>0)return;var base=n.definition().transform().pos();n.moveTo(from.x-base.x(),9,from.z-base.z(),0);n.hopTo(0,0,0,4,.4F);}));
+        }
+        if(effect.equals(StirAndCharm.id("received")) || effect.equals(StirAndCharm.id("chopped")) && data.getBoolean("done")){
+            var stack=ItemStack.parseOptional(view.level().registryAccess(),data.getCompound("stack"));
+            view.node("arrival").ifPresent(n->{display(n,stack,4);n.moveTo(-2,-5,0,0);n.hopTo(-2,1,6,2,.3F);n.scaleTo(.15F,.3F);});
+            after(.3F,()->view.node("arrival").ifPresent(n->n.setVisible(false)));
+        }
         if(effect.equals(StirAndCharm.id("assembled"))){
             var layers=new ArrayList<ItemStack>();
             var list=data.getList("layers",Tag.TAG_COMPOUND);
@@ -66,8 +77,8 @@ final class BoardBehavior implements StationBehavior {
         }
         if(assembling>0)assembling=Math.max(0,assembling-dt);
         var results=view.state().getItems("result");
-        for(int i=0;i<results.length;i++){boolean present=!results[i].isEmpty();view.node("result_"+i).ifPresent(n -> {n.setVisible(view.isFocused() && present && assembling<=0);n.setEnabled(view.isFocused() && present);});}
-        chopAge+=dt;
+        for(int i=0;i<results.length;i++){boolean present=false;view.node("result_"+i).ifPresent(n -> {n.setVisible(view.isFocused() && present && assembling<=0);n.setEnabled(view.isFocused() && present);});}
+        chopAge+=dt;partAge+=dt;
         int generation=ItemVoxels.generation();
         if(generation!=iconGeneration){iconGeneration=generation;meshes.clear();cutsKey="";marksKey="";}
         ItemStack parked=view.state().getItems("knife")[0];
@@ -75,7 +86,9 @@ final class BoardBehavior implements StationBehavior {
         ItemStack tool=tool(view);
         boolean knife=!tool.isEmpty(), focused=view.isFocused();
         var player=Minecraft.getInstance().player;
-        view.setCarriedHidden(player!=null && !pending.isEmpty() && BoardTools.supports(player.inventoryMenu.getCarried(),pending));
+        boolean overBoard=view.cursorOn(1.1F).filter(p->p.x>=1 && p.x<=11 && p.z>=3 && p.z<=13).isPresent();
+        boolean drawingKnife=overBoard || chopAge<.19F;
+        view.setCarriedHidden(player!=null && drawingKnife && !pending.isEmpty() && BoardTools.supports(player.inventoryMenu.getCarried(),pending));
         int chops=(int)view.state().getControl("chops"),total=pending.isEmpty()?1:required(view);
         view.node("surface").ifPresent(n -> {n.setVisible(focused);n.setEnabled(focused);});
         view.node("mouth").ifPresent(n -> {n.setVisible(focused);n.setEnabled(focused);});
@@ -103,11 +116,14 @@ final class BoardBehavior implements StationBehavior {
         var cursor=view.cursorOn(1.1F);
         float wantX=BoardTools.CENTER_X,wantZ=3;
         if(cursor.isPresent() && cursor.get().x>=1 && cursor.get().x<=11 && cursor.get().z>=3 && cursor.get().z<=13) {
-            wantX=cursor.get().x;wantZ=cursor.get().z;
+            var point=new Vector3f(cursor.get());
             if(!pending.isEmpty()) {
-                float distance=target.distance(wantX-BoardTools.CENTER_X,wantZ-BoardTools.CENTER_Z);
-                if(Math.abs(distance)<1.2F) {wantX-=target.normalX()*distance;wantZ-=target.normalZ()*distance;}
+                var food=view.node("food").orElseThrow();
+                var local=new org.joml.Matrix4f(food.sceneMatrix()).invert().transformPosition(new Vector3f(point));
+                float distance=target.distance(local.x,local.z);
+                if(Math.abs(distance)<1.2F){local.x-=target.normalX()*distance;local.z-=target.normalZ()*distance;point=food.sceneMatrix().transformPosition(local);}
             }
+            wantX=point.x;wantZ=point.z;
         }
         float follow=1-(float)Math.exp(-Math.min(dt,.1F)*25);
         knifeX+=(wantX-knifeX)*follow;knifeZ+=(wantZ-knifeZ)*follow;
@@ -115,8 +131,10 @@ final class BoardBehavior implements StationBehavior {
             shownKnife=tool.copy();
             view.node("knife_model").ifPresent(n -> {if(!tool.isEmpty())n.setVisual(Visual.ofItem(tool.getItem()).withAnchor(new Vector3f(8,8,8)));});
         }
-        float dip=chopAge<.2F ? (float)Math.sin(chopAge/.2F*Math.PI)*2.5F : 0;
-        view.node("knife_turn").ifPresent(n -> {n.setVisible(view.isInUse() && knife && !pending.isEmpty());n.moveTo(knifeX-BoardTools.CENTER_X,3-dip,knifeZ-BoardTools.CENTER_Z,0);n.rotateTo(0,ContentFacing.yaw(view)-(float)Math.toDegrees(target.angle()),0,0);});
+        float down=chopAge<.05F?chopAge/.05F:Math.max(0,1-(chopAge-.05F)/.14F);
+        float dip=down*2.4F;
+        view.node("knife_turn").ifPresent(n -> {n.setVisible(view.isInUse() && drawingKnife && knife && !pending.isEmpty());n.moveTo(knifeX-BoardTools.CENTER_X,3-dip,knifeZ-BoardTools.CENTER_Z,0);n.rotateTo(0,ContentFacing.yaw(view)-(float)Math.toDegrees(target.angle()),0,0);});
+        serving.frame(view,view.state().data().getBoolean("finish_ready"),assembling>0);
         book.frame(view,dt);
     }
     private static ItemStack tool(StationView view) {
@@ -168,21 +186,23 @@ final class BoardBehavior implements StationBehavior {
     private void mesh(StationView view,String node,ItemStack item,float size,List<ItemVoxels.Cut> cuts,int chop,int total) {
         view.node(node).ifPresent(n -> {
             n.setVisible(view.isInUse() && !item.isEmpty());if(item.isEmpty())return;
-            String key=item.getItem()+":"+item.getComponents().hashCode()+":"+chop+":"+total+"@"+ItemVoxels.generation();
+            int phase=node.equals("food")?Math.min(8,(int)(partAge/.22F*8)):8;
+            String key=item.getItem()+":"+item.getComponents().hashCode()+":"+chop+":"+total+":"+phase+"@"+ItemVoxels.generation();
             if(key.equals(meshes.get(node)))return;meshes.put(node,key);
             var icon=ItemVoxels.icon(item);
-            if(icon.isPresent()) {n.scaleTo(1,0);n.moveTo(0,0,0,0);n.setShape(ItemVoxels.build(icon.get(),size,cuts,.55F),icon.get().sprite(),true);}
+            if(icon.isPresent()) {n.scaleTo(1,0);n.moveTo(0,0,0,0);n.setShape(ItemVoxels.build(icon.get(),size,cuts,.55F*phase/8F),icon.get().sprite(),true);}
             else {n.setVisual(Visual.ofItem(item.getItem()).withAnchor(new Vector3f(8,8,8)));n.scaleTo(.4F,0);n.moveTo(0,3.2F,0,0);}
         });
     }
     public void onEvent(StationView view,SceneEvent event) {
+        if(serving.event(view,event))return;
         if(!(event instanceof SceneEvent.Click c))return;
         if(c.node().equals("book_open")){if(c.button()==0)book.click(view);return;}
         if(!c.node().equals("surface") && !c.node().equals("mouth"))return;
         if(!view.state().getItems("knife")[0].isEmpty() && view.state().getItems("pending")[0].isEmpty()) {view.sendAction("take",new CompoundTag());return;}
         boolean layers=Arrays.stream(view.state().getItems("ingredients")).anyMatch(stack -> !stack.isEmpty());
         if(layers) {
-            boolean ready=!view.state().data().getString("dish").isEmpty();
+            boolean ready=!view.state().data().getString("dish").isEmpty() || view.state().data().getBoolean("finish_ready");
             view.sendAction(c.button()==0&&ready?"assemble":"take",new CompoundTag());
             return;
         }
@@ -193,8 +213,9 @@ final class BoardBehavior implements StationBehavior {
         } else view.sendAction("assemble",new CompoundTag());
     }
     public boolean onItemClick(StationView view,String node,ItemStack stack,int button,boolean shift) {
+        if(serving.item(view,node,stack,shift))return true;
         if(node.equals("book_open")){if(button==0)book.click(view);return true;}
-        if(!node.equals("surface") && !node.equals("mouth"))return false;
+        if(!node.equals("surface") && !node.equals("mouth") && !node.equals("serve_area"))return false;
         boolean empty=view.state().getItems("pending")[0].isEmpty() && Arrays.stream(view.state().getItems("ingredients")).allMatch(ItemStack::isEmpty);
         if(shift && empty && BoardTools.canStick(stack)){view.sendAction("carve",new CompoundTag());return true;}
         if(BoardTools.canStick(stack)) {
@@ -213,9 +234,9 @@ final class BoardBehavior implements StationBehavior {
         long now=System.nanoTime();if(now-lastClick<200_000_000L)return;
         var cursor=view.cursorOn(1.1F);if(cursor.isEmpty())return;
         int mark=(int)view.state().getControl("chops");
-        var p=cursor.get();chopAge=0;lastClick=now;
-        if(p.x<1 || p.x>11 || p.z<3 || p.z>13 || Math.abs(mark(view,view.state().getItems("pending")[0],mark).distance(p.x-BoardTools.CENTER_X,p.z-BoardTools.CENTER_Z))>1.2F) {view.playSound(SoundEvents.WOOD_HIT,"food",.3F,1.5F);return;}
-        var tag=new CompoundTag();tag.putInt("mark",mark);tag.putFloat("at",p.z);view.sendAction("chop",tag);
+        var p=cursor.get();var local=new org.joml.Matrix4f(view.node("food").orElseThrow().sceneMatrix()).invert().transformPosition(new Vector3f(p));chopAge=0;lastClick=now;
+        if(p.x<1 || p.x>11 || p.z<3 || p.z>13 || Math.abs(mark(view,view.state().getItems("pending")[0],mark).distance(local.x,local.z))>1.2F) {view.playSound(SoundEvents.WOOD_HIT,"food",.3F,1.5F);return;}
+        var tag=new CompoundTag();tag.putInt("mark",mark);tag.putFloat("at",p.z);tag.putFloat("x",p.x);tag.putFloat("z",p.z);view.sendAction("chop",tag);
     }
 
     private void after(float seconds,Runnable run){steps.add(new Step(clock+Math.max(0,seconds),run));}

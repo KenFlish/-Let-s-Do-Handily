@@ -352,32 +352,6 @@
       "pickable": false,
       "children": [
         {
-          "id": "result",
-          "pos": [
-            -9,
-            16,
-            -9
-          ],
-          "rotation": [
-            -50,
-            0,
-            0
-          ],
-          "tooltip": "handson_farm_charm.result",
-          "collider": {
-            "from": [
-              -2.3,
-              -0.5,
-              -2.3
-            ],
-            "to": [
-              2.3,
-              0.7,
-              2.3
-            ]
-          }
-        },
-        {
           "id": "book_open",
           "pos": [
             8.329999999999998,
@@ -421,6 +395,112 @@
         ]
       },
       "tooltip": "handson_farm_charm.pot_contents"
+    },
+    {
+      "id": "serve_area",
+      "collider": {
+        "from": [
+          4,
+          7.6,
+          4
+        ],
+        "to": [
+          12,
+          7.72,
+          12
+        ]
+      },
+      "tooltip": "handson_farm_charm.serving"
+    },
+    {
+      "id": "offer_vessel",
+      "pos": [
+        8,
+        8,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "arrival",
+      "pos": [
+        8,
+        8,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "recover_preview",
+      "pos": [
+        8,
+        8,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "hand_0",
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "spill_0",
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "hand_1",
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "spill_1",
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "hand_2",
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "spill_2",
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "hand_3",
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "spill_3",
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "hand_4",
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "spill_4",
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "hand_5",
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "spill_5",
+      "pickable": false,
+      "hidden": true
     }
   ]
 }

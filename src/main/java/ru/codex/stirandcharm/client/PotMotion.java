@@ -16,7 +16,7 @@ final class PotMotion {
     private float tipX,tipZ,grip,homing,swirl,sign=1,turned,time,spoonX,spoonZ;
 
     static float surface(StationView view) {
-        return view.type().id().getPath().equals("candlelight_pot")?Broth.CANDLELIGHT_HEIGHT:Broth.FARM_HEIGHT;
+        return Broth.height(view.type().id().getPath().equals("candlelight_pot"),view.state().getTank("broth").amount());
     }
     static float[] point(StationView view) {
         var p=view.cursorOn(surface(view)).orElse(null);

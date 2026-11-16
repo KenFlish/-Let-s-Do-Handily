@@ -27,6 +27,7 @@ public final class VisualCheck {
     private static final BlockPos POT = new BlockPos(0, 70, 0), BOWL = new BlockPos(-2, 70, 0);
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         if (Boolean.getBoolean("handily.compatVisual")) return;
+        if(Boolean.getBoolean("handily.boardMatrix"))return;
         var mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null || mc.getSingleplayerServer() == null) {
             if (++frames > 8000) mc.stop();

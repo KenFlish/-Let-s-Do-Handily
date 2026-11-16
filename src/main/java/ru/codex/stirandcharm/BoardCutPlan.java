@@ -29,6 +29,19 @@ public final class BoardCutPlan {
     public float spot(int mark) { return spots[Math.min(mark, spots.length - 1)]; }
     public float angle(int mark) { return angles[Math.min(mark, angles.length - 1)]; }
     public Style style() { return style; }
+    public net.minecraft.nbt.CompoundTag save(){
+        var tag=new net.minecraft.nbt.CompoundTag();tag.putInt("style",style.ordinal());
+        var s=new net.minecraft.nbt.ListTag();var a=new net.minecraft.nbt.ListTag();
+        for(int i=0;i<marks;i++){s.add(net.minecraft.nbt.FloatTag.valueOf(spots[i]));a.add(net.minecraft.nbt.FloatTag.valueOf(angles[i]));}
+        tag.put("spots",s);tag.put("angles",a);return tag;
+    }
+    public static BoardCutPlan load(net.minecraft.nbt.CompoundTag tag){
+        var s=tag.getList("spots",5);var a=tag.getList("angles",5);int style=tag.getInt("style");
+        if(s.isEmpty() || s.size()>MOST_MARKS || a.size()!=s.size() || style<0 || style>=Style.values().length)return null;
+        float[] spots=new float[s.size()],angles=new float[s.size()];
+        for(int i=0;i<s.size();i++){spots[i]=s.getFloat(i);angles[i]=a.getFloat(i);if(!Float.isFinite(spots[i]) || spots[i]<0 || spots[i]>1 || !Float.isFinite(angles[i]))return null;}
+        return new BoardCutPlan(s.size(),spots,angles,Style.values()[style]);
+    }
 
     public static BoardCutPlan of(net.minecraft.world.level.Level level, ItemStack stack, CuttingBoardRecipe recipe) {
         String path = BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();

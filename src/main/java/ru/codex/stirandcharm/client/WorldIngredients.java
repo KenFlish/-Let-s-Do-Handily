@@ -28,9 +28,9 @@ public final class WorldIngredients {
                 WorldSoup.render(be,pose,buffers,light,ru.codex.stirandcharm.Broth.FARM_HEIGHT);
                 for (int i = 0; i < 6; i++) {
                     ItemStack stack = be.getItem(i);
-                    if (KitchenIngredients.liquid(stack) || KitchenIngredients.emptyContainer(stack)) continue;
+                    if (KitchenIngredients.liquid(stack) || KitchenIngredients.dissolved(stack) || KitchenIngredients.egg(stack) || KitchenIngredients.emptyContainer(stack)) continue;
                     float x = .32F + (i % 3) * .18F, z = i < 3 ? .35F : .65F;
-                    item(be, stack, pose, buffers, light, overlay, x, 7.55F/16F, z, .19F, i * 31);
+                    item(be, stack, pose, buffers, light, overlay, x, (Broth.height(false,Broth.amount(be))+.22F)/16F, z, .19F, i * 31);
                 }
             }
         });
@@ -41,7 +41,8 @@ public final class WorldIngredients {
                 pose.mulPose(Axis.YP.rotationDegrees(180-be.getBlockState().getValue(net.satisfy.farm_and_charm.core.block.RoasterBlock.FACING).toYRot()));
                 pose.translate(-.5,0,-.5);
                 float height=be.getBlockState().getValue(net.satisfy.farm_and_charm.core.block.RoasterBlock.HANGING) ? 6.5F : 4.5F;
-                for (int i=0;i<6;i++) TrayFood.world(be.getItem(i),i,height-4.3F,pose,buffers,light);
+                if(!be.getItem(7).isEmpty())TrayFood.finished(be.getItem(7),height-.9F,pose,buffers,light);
+                else for (int i=0;i<6;i++) TrayFood.world(be.getItem(i),i,height-4.3F,pose,buffers,light);
                 pose.popPose();
             }
         });
@@ -54,7 +55,8 @@ public final class WorldIngredients {
             if (!Settings.CANDLELIGHT.get() || DiegesisClient.station(be.getBlockPos()).map(s -> s.isInUse()).orElse(false)) return;
             pose.pushPose();pose.translate(.5,0,.5);
             pose.mulPose(Axis.YP.rotationDegrees(180-be.getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING).toYRot()));pose.translate(-.5,0,-.5);
-            for(int i=0;i<6;i++)TrayFood.world(be.getItem(i),i,1.1F,pose,buffers,light);
+            if(!be.getItem(7).isEmpty())TrayFood.finished(be.getItem(7),2.7F,pose,buffers,light);
+            else for(int i=0;i<6;i++)TrayFood.world(be.getItem(i),i,1.1F,pose,buffers,light);
             pose.popPose();
         });
     }
@@ -70,8 +72,8 @@ public final class WorldIngredients {
             {
                 WorldSoup.render(be,pose,buffers,light,ru.codex.stirandcharm.Broth.CANDLELIGHT_HEIGHT);
                 for(int i=0;i<6;i++){
-                    var stack=be.getItem(i);if(KitchenIngredients.liquid(stack) || KitchenIngredients.emptyContainer(stack))continue;
-                    item(be,stack,pose,buffers,light,overlay,.32F+i%3*.18F,9.05F/16F,i<3?.35F:.65F,.19F,i*31);
+                    var stack=be.getItem(i);if(KitchenIngredients.liquid(stack) || KitchenIngredients.dissolved(stack) || KitchenIngredients.egg(stack) || KitchenIngredients.emptyContainer(stack))continue;
+                    item(be,stack,pose,buffers,light,overlay,.32F+i%3*.18F,(Broth.height(true,Broth.amount(be))+.22F)/16F,i<3?.35F:.65F,.19F,i*31);
                 }
             }
             pose.translate(0,3F/16F,0);

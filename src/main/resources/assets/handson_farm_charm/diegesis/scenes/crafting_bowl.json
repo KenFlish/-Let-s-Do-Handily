@@ -122,7 +122,7 @@
           9.8
         ]
       },
-      "tooltip": "handson_farm_charm.stir"
+      "tooltip": "handson_farm_charm.whisk"
     },
     {
       "id": "mouth",
@@ -262,26 +262,6 @@
       "pickable": false,
       "children": [
         {
-          "id": "result",
-          "pos": [
-            -9,
-            16,
-            -9
-          ],
-          "rotation": [
-            -50,
-            0,
-            0
-          ],
-          "tooltip": "handson_farm_charm.result",
-          "slot": {
-            "slot": "result[0]",
-            "size": 4,
-            "display": "hidden",
-            "highlight": false
-          }
-        },
-        {
           "id": "book_open",
           "pos": [
             8.329999999999998,
@@ -309,6 +289,62 @@
           }
         }
       ]
+    },
+    {
+      "id": "serve_area",
+      "collider": {
+        "from": [
+          4,
+          8,
+          4
+        ],
+        "to": [
+          12,
+          8.12,
+          12
+        ]
+      },
+      "tooltip": "handson_farm_charm.serving"
+    },
+    {
+      "id": "offer_vessel",
+      "pos": [
+        8,
+        8,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "arrival",
+      "pos": [
+        8,
+        8,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "recover_preview",
+      "pos": [
+        8,
+        8,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "cooked_food",
+      "pos": [
+        8,
+        7.4,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
     }
   ]
 }

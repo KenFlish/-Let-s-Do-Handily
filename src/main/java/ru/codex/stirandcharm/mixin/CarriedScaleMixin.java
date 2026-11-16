@@ -17,6 +17,7 @@ public abstract class CarriedScaleMixin {
         var station=FocusController.get().station();
         if(carried==null || carried.preview()!=null || station==null
             || !station.type().id().getNamespace().equals(StirAndCharm.ID)) return;
+        if (station.isCarriedHidden()) { cir.setReturnValue(null); return; }
         cir.setReturnValue(new FocusInput.Carried(carried.stack(),carried.stationPos(),carried.lean(),false,
             4.5f,carried.mouseX(),carried.mouseY(),carried.preview()));
     }

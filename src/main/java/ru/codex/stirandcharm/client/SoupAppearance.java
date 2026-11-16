@@ -26,27 +26,17 @@ final class SoupAppearance {
             pieces.add(new Floater(leaf ? Floater.LEAF : Floater.CHUNK, 0xFF000000 | rgb, leaf ? 1.1F : .85F));
             count += Math.min(4, stack.getCount() + 1);
         }
-        int raw = BrothLook.color(view.level(), food, ItemStack.EMPTY);
-        float progress = view.state().getControl("progress");
-        ItemStack preview = meal.isEmpty() ? FarmCookbook.matching(view, false)
-            .map(h -> KitchenRecipes.result(view.level(), h.value())).orElse(ItemStack.EMPTY) : meal;
-        int alpha;
-        if (onlyWater && meal.isEmpty()) { target = 0x8877B9D8; mottle = .02F; }
-        else {
-            int cooked = preview.isEmpty() ? raw : FoodColors.broth(view.level(), preview);
-            float cookedPart = meal.isEmpty() ? progress * .85F : 1;
-            alpha = meal.isEmpty() ? 0xB8 + Math.round(progress * 50) : 0xEC;
-            target = alpha << 24 | blend(raw, cooked, cookedPart);
-            mottle = coloured.isEmpty() && meal.isEmpty() ? .04F : .2F + .65F * (meal.isEmpty() ? progress : 1);
-        }
-        if (coloured.isEmpty() && meal.isEmpty() && food.isEmpty()) target = 0x8877B9D8;
+        float mixture=view.state().getControl("mixture");
+        int raw=BrothLook.color(view.level(),view.pos(),food,meal,mixture);
+        target=(meal.isEmpty()?0xA0:0xF0)<<24 | raw & 0xFFFFFF;
+        mottle=meal.isEmpty()?mixture:1;
         if (!meal.isEmpty() && count == 0) {
             int rgb = FoodColors.broth(view.level(), meal);
             pieces.add(new Floater(Floater.NUGGET, 0xFF000000 | FoodColors.lighter(rgb, .3F), .65F));
             pieces.add(new Floater(Floater.LEAF, 0xFF6E9B43, .6F));
             count = 8;
         }
-        final int floatingCount = Math.min(24, count);
+        final int floatingCount = Math.min(24, meal.isEmpty()?Math.round(count*mixture):count);
         view.node("broth").ifPresent(n -> {
             n.setLiquidColor(target);
             n.setMottle(mottle);
@@ -56,6 +46,10 @@ final class SoupAppearance {
     }
 
     void frame(StationView view, float dt) {
+        var food=Arrays.stream(view.state().getItems("ingredients")).filter(s->!s.isEmpty()).toList();
+        var meal=view.state().getItems("result")[0];
+        int rgb=BrothLook.color(view.level(),view.pos(),food,meal,view.state().getControl("mixture"));
+        view.node("broth").ifPresent(n->n.setLiquidColor((meal.isEmpty()?0xA0000000:0xF0000000)|(rgb&0xFFFFFF)));
         boolean heated = view.state().getControl("heated") > 0;
         float x = view.state().getControl("spoon_x"), z = view.state().getControl("spoon_z");
         if (x * x + z * z > .2F) {

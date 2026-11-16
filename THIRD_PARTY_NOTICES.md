@@ -1,5 +1,7 @@
 # Credits
 
+Version 0.6.3 ports `KitchenMotions.java` (Pour, Shake, Crack and Dip) from Hands-On Delight by Pocky, commit `292fb1920eed9797551dade9027ebd97f70b65f7`, under MIT. Copyright (c) 2026 Pocky. Adaptations use installed Let's Do item visuals, vanilla/library particles and sounds, and server-acknowledged native inventory changes. `PotArrivals` applies that revision's arrival arc, stagger and take-back preview design. Board knife down/up timing and piece separation also follow that revision. No quality bonuses or extra servings are included. The complete license is in `LICENSE_HANDSON_DELIGHT`.
+
 Handily is an independent addon for Farm & Charm, inspired by the in-world cooking interactions of Hands-On Delight by Pocky (https://github.com/Pocky-l/handson-delight).
 
 Diegesis by Pocky is an external dependency (MIT, https://github.com/Pocky-l/diegesis). Farm & Charm by satisfy and Architectury API are external dependencies. None of their binaries, textures, sounds or models is bundled in this addon. The addon references installed Farm & Charm resources at runtime.

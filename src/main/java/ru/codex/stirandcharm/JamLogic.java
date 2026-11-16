@@ -44,10 +44,13 @@ public final class JamLogic implements StationLogic {
             if(SmallCookingPotBlockEntity.isJar(stack))bottle(c,p,stack,from);
             else if(!stack.isEmpty())pot.addIngredient(stack,p);
         } else if(action.equals("bottle")) {
-            ItemStack jar=p.inventoryMenu.getCarried();int slot=-1;
-            if(!SmallCookingPotBlockEntity.isJar(jar))for(int i=0;i<36;i++)if(SmallCookingPotBlockEntity.isJar(p.getInventory().getItem(i))){jar=p.getInventory().getItem(i);slot=i;break;}
-            bottle(c,p,jar,slot);
-        } else if(action.equals("dump"))pot.dump(p);
+            int made=0;
+            do {
+                ItemStack jar=p.inventoryMenu.getCarried();int slot=-1;
+                if(!SmallCookingPotBlockEntity.isJar(jar))for(int i=0;i<36;i++)if(SmallCookingPotBlockEntity.isJar(p.getInventory().getItem(i))){jar=p.getInventory().getItem(i);slot=i;break;}
+                if(!bottle(c,p,jar,slot))break;made++;
+            }while(data.getBoolean("all") && made<64 && pot.canBottle());
+        } else if(action.equals("dump") && p.inventoryMenu.getCarried().isEmpty())pot.dump(p);
         else if(action.equals("fill") && Settings.BOOK.get()) {
             var id=ResourceLocation.tryParse(data.getString("recipe"));
             var holder=recipes(c.level()).stream().filter(h -> h.id().equals(id)).findFirst();
@@ -81,15 +84,22 @@ public final class JamLogic implements StationLogic {
         }
         return false;
     }
-    private void bottle(StationContext c,Player p,ItemStack jar,int from){
-        if(!pot.canBottle() || !SmallCookingPotBlockEntity.isJar(jar))return;
-        // Check one entire inventory slot first: perfect-jam components are assigned by Bakery only when bottled.
-        boolean room=false;for(int i=0;i<36;i++)if(p.getInventory().getItem(i).isEmpty()){room=true;break;}
-        if(!room && !(from>=0 && jar.getCount()==1)) {p.displayClientMessage(Component.translatable("handson_farm_charm.serving_failed"),true);return;}
-        ItemStack jam=pot.bottle();if(jam.isEmpty())return;
-        if(!p.getAbilities().instabuild)jar.shrink(1);
-        if(jar.isEmpty()){if(from==-1)p.inventoryMenu.setCarried(ItemStack.EMPTY);else p.getInventory().setItem(from,ItemStack.EMPTY);}
-        var rest=jam.copy();p.getInventory().add(rest);if(!rest.isEmpty())p.drop(rest,false);
+    public static ItemStack preview(SmallCookingPotBlockEntity pot){
+        var item=pot.getResult().copyWithCount(1);
+        if(!item.isEmpty() && pot.currentConsistency()==net.satisfy.bakery.core.recipe.JamConsistency.PERFECT){
+            item.set(net.satisfy.bakery.core.registry.DataComponentRegistry.PERFECT_JAM.get(),((ru.codex.stirandcharm.mixin.JamAccess)pot).handily$cook());
+            item.set(net.minecraft.core.component.DataComponents.ITEM_NAME,Component.translatable("item.bakery.perfect_jam",pot.getResult().getHoverName()));
+        }
+        return item;
+    }
+    private boolean bottle(StationContext c,Player p,ItemStack jar,int from){
+        if(!pot.canBottle() || !SmallCookingPotBlockEntity.isJar(jar))return false;
+        var planned=InventoryDelivery.copy(p);boolean consume=!p.getAbilities().instabuild;
+        if(consume && from>=0)planned[from].shrink(1);
+        if(!InventoryDelivery.insert(planned,preview(pot))){p.displayClientMessage(Component.translatable("handson_farm_charm.serving_failed"),true);return false;}
+        var jam=pot.bottle();if(jam.isEmpty())return false;
+        if(consume && from==-1){jar.shrink(1);p.inventoryMenu.setCarried(jar.isEmpty()?ItemStack.EMPTY:jar);}
+        InventoryDelivery.commit(p,planned);ServingEffects.served(c,jam,new ItemStack(net.satisfy.bakery.core.registry.ObjectRegistry.JAR.get()));return true;
     }
     public void tick(StationContext c){
         c.state().setControl("progress",pot.getCookingTime()>0?Math.min(1,pot.getTimer()/(float)pot.getCookingTime()):0);
@@ -97,6 +107,8 @@ public final class JamLogic implements StationLogic {
         c.state().setControl("stir_due",pot.isStirDue()?1:0);c.state().setControl("ready",pot.canBottle()?1:0);
         var tag=c.state().data();
         tag.putBoolean("book",Settings.BOOK.get());tag.putBoolean("busy",pot.isCooking() || pot.isBottling() || pot.isBurnt());tag.putBoolean("burnt",pot.isBurnt());tag.putInt("jars",pot.getJarsLeft());
+        tag.putString("vessel", "bakery:jar");
+        tag.putBoolean("ready",pot.canBottle());
         tag.putString("consistency",pot.isEmpty()?"":pot.currentConsistency().getSerializedName());
         if(pot.getResult().isEmpty())tag.remove("meal");else tag.put("meal",pot.getResult().save(c.level().registryAccess()));
         c.state().setData(tag);

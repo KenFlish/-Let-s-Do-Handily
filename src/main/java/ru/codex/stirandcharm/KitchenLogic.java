@@ -60,6 +60,7 @@ public final class KitchenLogic implements StationLogic {
     @Override public void onSlotChanged(StationContext station, SlotRef slot) {
         if (bowl && slot.group().equals("ingredients")) ((CraftingBowlBlockEntity) container).resetStirring();
         container.setChanged();
+        poured(station);
         snapshot();
         if (!bowl) publish(station);
     }
@@ -83,7 +84,7 @@ public final class KitchenLogic implements StationLogic {
             station.state().setControl("spoon_x", sample.x());
             station.state().setControl("spoon_z", sample.z());
             long now = station.level().getGameTime();
-            if (!bowl && sample.impulse() > 0) { ((PotStirring)container).handily$stirred(now); lastStir=now; }
+            if (!bowl && sample.impulse() > 0) { ((PotStirring)container).handily$stirred(now); lastStir=now; if(container instanceof BrothState mixture)mixture.handily$mixture(mixture.handily$mixture()+sample.impulse()*.3F); }
             // Shared station cap: several cooks cannot multiply the native whisk impulse rate.
             if (bowl && sample.impulse() > 0 && (lastImpulse == Long.MIN_VALUE || now - lastImpulse >= 2)) {
                 CraftingBowlBlockEntity be = (CraftingBowlBlockEntity) container;
@@ -93,21 +94,27 @@ public final class KitchenLogic implements StationLogic {
                     lastImpulse = now;
                 }
             }
+        } else if(action.equals("collect") && bowl){
+            var be=(CraftingBowlBlockEntity)container;var out=container.getItem(4);
+            if(be.canTakeOut(station.level()) && !out.isEmpty() && InventoryDelivery.fits(player,List.of(out.copy()))){
+                var taken=container.removeItem(4,out.getCount());InventoryDelivery.give(player,List.of(taken));ServingEffects.served(station,taken,ItemStack.EMPTY);publish(station);
+            }
         } else if (action.equals("collect") && !bowl) {
+            var meal=container.getItem(7).copy();var vessel=((MealVessel)container).handily$vessel().copy();
             int taken=MealServing.collect(player,container,data.getBoolean("one"),data.getBoolean("inventory"));
+            if(taken>0)ServingEffects.served(station,meal,vessel);
             if (taken>0 && station.level() instanceof ServerLevel level)
                 ((CookingPotBlockEntity)container).dropExperience(level,Vec3.atCenterOf(station.pos()));
             else if (taken==0 && !container.getItem(7).isEmpty()) player.displayClientMessage(Component.translatable("handson_farm_charm.serving_failed"),true);
         } else if (action.equals("serve") && !bowl) {
             ServingContainers.place(player, container, data.getBoolean("one"),
                 stack -> MealServing.acceptsVessel(station.level(), stack));
-        } else if (action.equals("take_liquid") && !bowl) {
+        } else if (action.equals("take_liquid") && !bowl && player.inventoryMenu.getCarried().isEmpty()) {
             for (int i = 5; i >= 0; i--) {
                 ItemStack stack = container.getItem(i);
-                if (stack.isEmpty() || !KitchenIngredients.liquid(stack)) continue;
-                ItemStack remainder = stack.copy();
-                player.getInventory().add(remainder);
-                container.setItem(i, remainder.isEmpty() ? ItemStack.EMPTY : remainder);
+                if (stack.isEmpty() || !(KitchenIngredients.liquid(stack)||KitchenIngredients.dissolved(stack)||KitchenIngredients.egg(stack))) continue;
+                if(!InventoryDelivery.give(player,List.of(stack.copy())))break;
+                container.setItem(i,ItemStack.EMPTY);
                 player.getInventory().setChanged();
                 player.inventoryMenu.broadcastChanges();
                 snapshot();
@@ -128,18 +135,27 @@ public final class KitchenLogic implements StationLogic {
             }
             plan.get().commit(player.getInventory(), container);
             if (bowl) ((CraftingBowlBlockEntity) container).resetStirring();
-            snapshot();
+            poured(station);snapshot();
             player.inventoryMenu.broadcastChanges();
         }
     }
 
     @Override public void tick(StationContext station) {
+        if(!bowl){poured(station);snapshot();}
         if (bowl) {
             boolean changed = false;
             for (int i = 0; i < 4; i++) if (!ItemStack.matches(knownInputs[i], container.getItem(i))) changed = true;
             if (changed) { ((CraftingBowlBlockEntity) container).resetStirring(); snapshot(); }
         }
         publish(station);
+    }
+    private void poured(StationContext c){
+        if(bowl || knownInputs==null)return;
+        for(int i=0;i<6;i++){var item=container.getItem(i);var old=knownInputs[i];
+            if(KitchenIngredients.liquid(item) && (!ItemStack.isSameItemSameComponents(item,old) || item.getCount()>old.getCount())){
+                ((BrothState)container).handily$poured(c.level().getGameTime());break;
+            }
+        }
     }
     private void snapshot() {
         knownInputs = new ItemStack[bowl ? 4 : 6];
@@ -159,6 +175,10 @@ public final class KitchenLogic implements StationLogic {
         station.state().setControl("stirring", lastStir!=Long.MIN_VALUE && station.level().getGameTime()-lastStir<12 ? 1 : 0);
         station.state().setControl("progress", progress);
         station.state().setControl("heated", heated ? 1 : 0);
+        if(!bowl && container instanceof BrothState mixture){
+            if(Broth.contents(container).isEmpty() && container.getItem(7).isEmpty())mixture.handily$mixture(0);
+            station.state().setControl("mixture",mixture.handily$mixture());
+        }
         int broth = bowl ? 0 : Broth.amount(container);
         station.state().setTank("broth", broth > 0 ? TankContents.of(StirAndCharm.id("soup"), broth) : TankContents.EMPTY);
         var data = station.state().data();

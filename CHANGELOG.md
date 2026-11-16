@@ -1,4 +1,18 @@
-# [Let's Do] Handily 0.6.2
+# [Let's Do] Handily 0.6.3
+
+- Ported Hands-On Delight's pouring, dry-ingredient shaking, egg cracking and serving motions under MIT, adapted to native Let's Do models and inventories.
+- Fixed duplicate flat cursors while a board knife is drawn. Cutting uses the food's transform and a thin work-surface hitbox, including side cameras.
+- Cut plans and completed marks survive closing and native save/load; server checks sequence, tool, interval and finite in-bounds coordinates.
+- Unordered board assembly accepts any matching first ingredient. A vessel finishes the native recipe; cheese can start Candlelight's tomato mozzarella salad.
+- Results and remainders go straight to inventory. Removed the eight side output cells; retained leftovers migrate from saved native storage without dropping on full inventories.
+- Empty pots show clear water. Solids colour it through stirring; poured liquids spread colour during pouring. World and scene use the same colour, height and mixture state.
+- Dissolved ingredients have a take-back preview and can be recovered into inventory with an empty-cursor right click.
+- Ready meals offer an inventory vessel over the food. Click serves one, Shift a batch, including the last cursor vessel. Full inventories do not consume food or vessels.
+- Finished pan/roaster food is drawn on the cookware surface. Bakery uses its real wooden handle for dumping, with a hover outline and discard warning; jar components and native XP remain intact.
+- Spoon and whisk hints are separate. Removed speed and multiplier claims from current UI and description.
+- Mincer and HerbalBrews kettle scenes remain disabled. Hands-On Delight remains optional; no stars, bonus portions or recipe rebalance.
+
+## 0.6.2
 
 - Adapted Hands-On Delight's spoon-following and ingredient-drift algorithms to Farm & Charm's native spoon model. The spoon's end follows the pointer on the soup plane, the handle tilts, and the current eases out after stirring stops.
 - Floating ingredients bob, move apart and avoid the spoon and pot walls.

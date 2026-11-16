@@ -24,7 +24,7 @@
   "handson_farm_charm.book.seconds": "%s s",
   "handson_farm_charm.badge.ready": "Ready · %s servings",
   "handson_farm_charm.help": "Click the handle, stir in circles. Click again to release. Esc: leave.",
-  "handson_farm_charm.stir": "Hold or click the handle and move in circles. Pot: up to 1.5x cooking speed",
+  "handson_farm_charm.stir": "Hold or click the spoon handle and move the mouse in circles",
   "handson_farm_charm.result": "Prepared food",
   "handson_farm_charm.containers": "Empty serving containers",
   "handson_farm_charm.progress": "Progress",
@@ -36,8 +36,10 @@
   "handson_farm_charm.fill_failed": "Cannot add this recipe: check ingredients, free space and the lid.",
   "handson_farm_charm.serving_failed": "A matching serving container and free inventory space are required",
   "handson_farm_charm.serve_with": "%s — serve with: %s",
-  "handson_farm_charm.book.pot_time": "23–35 s",
+  "handson_farm_charm.book.pot_time": "35 s",
   "handson_farm_charm.next": "Next page",
   "handson_farm_charm.prev": "Previous page",
-  "handson_farm_charm.pot_contents": "Add ingredients. Click food to take it; right-click the soup with an empty cursor to recover a poured ingredient."
+  "handson_farm_charm.pot_contents": "Add ingredients. Click food to take it; right-click the soup with an empty cursor to recover a poured ingredient.",
+  "handson_farm_charm.whisk": "Hold or click the whisk and move the mouse in circles",
+  "handson_farm_charm.serving": "Click: serve one into inventory. Shift: serve a batch. A matching vessel is required."
 }

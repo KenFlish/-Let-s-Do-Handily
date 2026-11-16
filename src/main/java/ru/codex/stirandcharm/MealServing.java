@@ -107,62 +107,33 @@ public final class MealServing {
     }
 
     /**
-     * Takes up to {@code one} portion (or all of them with shift) from the station. Vessels are paid from
-     * the cursor first, then the station, then (with shift) the inventory. When the cursor held the last
-     * vessel the dish takes its place; otherwise it goes to the inventory.
+     * Serves one portion, or an available batch with Shift, straight into the inventory.
+     * Vessels come from the cursor, legacy station stock, then inventory. The inventory transaction
+     * accounts for a consumed inventory vessel freeing its slot; the last cursor vessel stays empty.
      */
     public static int collect(Player player, Container c, boolean one, boolean shift) {
         if (!(c instanceof MealVessel vesselData)) return 0;
-        ItemStack food = c.getItem(7), vessel = vesselData.handily$vessel();
-        if (food.isEmpty() || vessel.isEmpty()) return 0;
-        ItemStack held = player.inventoryMenu.getCarried();
-        boolean heldMatch = matches(held, vessel);
-        boolean stationMatch = matches(c.getItem(6), vessel);
-        int pending = pending(c), paid = Math.max(0, food.getCount() - pending);
-        int heldCount = heldMatch ? held.getCount() : 0;
-        int stationCount = stationMatch ? c.getItem(6).getCount() : 0;
-        int inventoryCount = shift ? matching(player, vessel) : 0;
-        int requested = one ? 1 : food.getCount();
-        int most = Math.min(requested, paid + heldCount + stationCount + inventoryCount);
-        int count = 0, useHeld = 0, useStation = 0, useInventory = 0;
-        boolean toCursor = false;
-        for (int n = most; n > 0; n--) {
-            int cost = Math.max(0, n - paid);
-            int fromHeld = Math.min(cost, heldCount);
-            int fromStation = Math.min(cost - fromHeld, stationCount);
-            int fromInventory = cost - fromHeld - fromStation;
-            if (fromInventory > inventoryCount) continue;
-            boolean cursor = !shift && (heldMatch ? heldCount - fromHeld == 0 : held.isEmpty());
-            if (cursor) {
-                if (n > food.getMaxStackSize()) continue;
-            } else if (capacity(player, food, vessel, fromInventory) < n) continue;
-            count = n; useHeld = fromHeld; useStation = fromStation; useInventory = fromInventory; toCursor = cursor;
-            break;
-        }
-        if (count <= 0) return 0;
-        int cost = Math.max(0, count - paid);
-        if (useHeld > 0) {
-            held.shrink(useHeld);
-            player.inventoryMenu.setCarried(held.isEmpty() ? ItemStack.EMPTY : held);
-        }
-        if (useStation > 0) {
-            var station = c.getItem(6);
-            station.shrink(useStation);
-            c.setItem(6, station.isEmpty() ? ItemStack.EMPTY : station);
-        }
-        if (useInventory > 0) consumeInventory(player, vessel, useInventory);
-        ItemStack taken = food.split(count);
-        vesselData.handily$unserved(pending - cost);
-        c.setItem(7, food.isEmpty() ? ItemStack.EMPTY : food);
-        if (toCursor) player.inventoryMenu.setCarried(taken);
-        else {
-            ItemStack rest = taken.copy();
-            player.getInventory().add(rest);
-            if (!rest.isEmpty()) player.drop(rest, false);
-        }
-        c.setChanged();
-        player.getInventory().setChanged();
-        player.inventoryMenu.broadcastChanges();
+        int count=0;
+        do {
+            var food=c.getItem(7);var vessel=vesselData.handily$vessel();
+            if(food.isEmpty())break;
+            int debt=pending(c);boolean pay=debt>=food.getCount() && !vessel.isEmpty();
+            var held=player.inventoryMenu.getCarried();var planned=InventoryDelivery.copy(player);
+            int source=-3;
+            if(pay){
+                if(matches(held,vessel))source=-1;
+                else if(matches(c.getItem(6),vessel))source=-2;
+                else {int selected=player.getInventory().selected;if(matches(planned[selected],vessel))source=selected;
+                    else for(int i=0;i<36;i++)if(matches(planned[i],vessel)){source=i;break;}}
+                if(source==-3)break;
+                if(source>=0)planned[source].shrink(1);
+            }
+            if(!InventoryDelivery.insert(planned,food.copyWithCount(1)))break;
+            if(pay && source==-1){held.shrink(1);player.inventoryMenu.setCarried(held.isEmpty()?ItemStack.EMPTY:held);}
+            if(pay && source==-2){var stack=c.getItem(6);stack.shrink(1);c.setItem(6,stack.isEmpty()?ItemStack.EMPTY:stack);}
+            food.shrink(1);c.setItem(7,food.isEmpty()?ItemStack.EMPTY:food);
+            vesselData.handily$unserved(debt-(pay?1:0));InventoryDelivery.commit(player,planned);c.setChanged();count++;
+        } while(shift && count<64);
         return count;
     }
 

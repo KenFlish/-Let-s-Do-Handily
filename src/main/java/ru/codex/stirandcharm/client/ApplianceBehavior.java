@@ -10,11 +10,13 @@ final class ApplianceBehavior implements StationBehavior {
     private final RecipeBook book;
     private final ApplianceCookbook source;
     private ResultBadge result;
+    private final ServingGesture serving=new ServingGesture("collect",7);
     private boolean cranking, pinned;
     private final HandMotion hand = new HandMotion();
     private float lidAngle;
     private long start, sent = Long.MIN_VALUE;
     ApplianceBehavior(Appliance kind) { this.kind = kind; source = new ApplianceCookbook(kind); book = new RecipeBook(source); }
+    public void onEffect(StationView view,net.minecraft.resources.ResourceLocation id,String node,CompoundTag tag){serving.effect(view,id,tag);}
     public void onSceneReady(StationView view) {
         view.node("book_open").ifPresent(n -> n.setPainter(book));
         result = new ResultBadge(view, kind, source);
@@ -41,7 +43,7 @@ final class ApplianceBehavior implements StationBehavior {
     }
     public void frame(StationView view, float dt) {
         view.setCarriedHidden(false);
-        view.node("result").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
+        view.node("result").ifPresent(n -> { n.setVisible(kind==Appliance.STOVE && view.isFocused()); n.setEnabled(kind==Appliance.STOVE && view.isFocused()); });
         view.node("fuel").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
         view.node("fire").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
         if(kind==Appliance.ROASTER)TrayFood.frame(view);
@@ -59,14 +61,17 @@ final class ApplianceBehavior implements StationBehavior {
                 n.moveTo(0, hanging ? 2 : 0, 0, 0); n.setVisible(open && lidAngle>40); n.setEnabled(open);
             });
             view.node("mouth").ifPresent(n -> { n.setVisible(open); n.setEnabled(open); n.moveTo(0,hanging?2:0,0,0); });
+            view.node("cooked_food").ifPresent(n->{n.setVisible(open && lidAngle>40 && !view.state().getItems("result")[0].isEmpty());n.moveTo(0,hanging?2:0,0,0);});
         } else if (kind == Appliance.STOVE) {
             for (int i=0;i<3;i++) view.node("ingredient_"+i).ifPresent(n -> {
                 n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true);
             });
         }
+        serving.frame(view,kind==Appliance.ROASTER && !view.state().getItems("result")[0].isEmpty(),view.state().getControl("lid_open")<.5F && view.level().getBlockState(view.pos()).hasProperty(RoasterLid.OPEN));
         book.frame(view, dt);
     }
     public void onEvent(StationView view, SceneEvent event) {
+        if(serving.event(view,event))return;
         if (event instanceof SceneEvent.Stroke s && s.node().equals("crank_handle") && s.button() == 0) {
             if (s.phase() == SceneEvent.Stroke.Phase.START) { cranking = true; if (!pinned) hand.grab(false); start = System.nanoTime(); }
             if (s.phase() == SceneEvent.Stroke.Phase.END) {
@@ -81,6 +86,7 @@ final class ApplianceBehavior implements StationBehavior {
         }
     }
     public boolean onItemClick(StationView view, String node, net.minecraft.world.item.ItemStack stack, int button, boolean shift) {
+        if(serving.item(view,node,stack,shift))return true;
         if (kind==Appliance.ROASTER && node.equals("result")) { collect(view, button, Vessels.holds(view, stack), shift); return true; }
         if (kind != Appliance.ROASTER || !(node.equals("mouth") || node.startsWith("ingredient_"))) return false;
         if (kind.recipes(view.level()).stream().anyMatch(h -> h.value().getIngredients().stream().anyMatch(i -> i.test(stack)))) return false;

@@ -13,12 +13,17 @@ public abstract class BoardQueue implements ru.codex.stirandcharm.BoardSelection
     @Unique private ItemStack handily$queued=ItemStack.EMPTY;
     @Unique private boolean handily$valid;
     @Unique private net.minecraft.resources.ResourceLocation handily$recipe;
+    @Unique private net.minecraft.nbt.CompoundTag handily$cuts=new net.minecraft.nbt.CompoundTag();
+    @Unique private final net.minecraft.core.NonNullList<ItemStack> handily$outputs=net.minecraft.core.NonNullList.withSize(8,ItemStack.EMPTY);
+    public net.minecraft.core.NonNullList<ItemStack> handily$outputs(){return handily$outputs;}
+    public net.minecraft.nbt.CompoundTag handily$cuts(){return handily$cuts.copy();}
+    public void handily$cuts(net.minecraft.nbt.CompoundTag cuts){handily$cuts=cuts.copy();handily$sync();}
     public net.minecraft.resources.ResourceLocation handily$recipe(){return handily$recipe;}
     public void handily$recipe(net.minecraft.resources.ResourceLocation recipe){handily$recipe=recipe;handily$sync();}
     @Inject(method="saveAdditional",at=@At("TAIL"),remap=false)
-    private void handily$save(net.minecraft.nbt.CompoundTag tag,net.minecraft.core.HolderLookup.Provider registries,CallbackInfo ci){if(handily$recipe!=null)tag.putString("HandilyRecipe",handily$recipe.toString());}
+    private void handily$save(net.minecraft.nbt.CompoundTag tag,net.minecraft.core.HolderLookup.Provider registries,CallbackInfo ci){if(handily$recipe!=null)tag.putString("HandilyRecipe",handily$recipe.toString());tag.put("HandilyCuts",handily$cuts);var output=new net.minecraft.nbt.CompoundTag();net.minecraft.world.ContainerHelper.saveAllItems(output,handily$outputs,registries);tag.put("HandilyLegacyOutputs",output);}
     @Inject(method="loadAdditional",at=@At("TAIL"),remap=false)
-    private void handily$load(net.minecraft.nbt.CompoundTag tag,net.minecraft.core.HolderLookup.Provider registries,CallbackInfo ci){handily$recipe=net.minecraft.resources.ResourceLocation.tryParse(tag.getString("HandilyRecipe"));}
+    private void handily$load(net.minecraft.nbt.CompoundTag tag,net.minecraft.core.HolderLookup.Provider registries,CallbackInfo ci){handily$recipe=net.minecraft.resources.ResourceLocation.tryParse(tag.getString("HandilyRecipe"));handily$cuts=tag.getCompound("HandilyCuts").copy();handily$outputs.clear();net.minecraft.world.ContainerHelper.loadAllItems(tag.getCompound("HandilyLegacyOutputs"),handily$outputs,registries);}
     @Invoker("markUpdated") public abstract void handily$sync();
     @org.spongepowered.asm.mixin.gen.Accessor("pendingChops") public abstract void handily$pendingChops(int value);
     @Inject(method="chopPending",at=@At("HEAD"),remap=false)

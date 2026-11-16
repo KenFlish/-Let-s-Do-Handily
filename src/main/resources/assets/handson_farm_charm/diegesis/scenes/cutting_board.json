@@ -112,12 +112,12 @@
       "collider": {
         "from": [
           1,
-          0,
+          1.06,
           3
         ],
         "to": [
           11,
-          5,
+          1.14,
           13
         ]
       },
@@ -303,176 +303,54 @@
               3.9
             ]
           }
-        },
-        {
-          "id": "result_0",
-          "pos": [
-            -13,
-            8,
-            -10
-          ],
-          "rotation": [
-            -50,
-            0,
-            0
-          ],
-          "slot": {
-            "slot": "result[0]",
-            "size": 3.5,
-            "display": "flat",
-            "counts": "always",
-            "highlight": false
-          },
-          "tooltip": "handson_farm_charm.result"
-        },
-        {
-          "id": "result_1",
-          "pos": [
-            -17,
-            8,
-            -10
-          ],
-          "rotation": [
-            -50,
-            0,
-            0
-          ],
-          "slot": {
-            "slot": "result[1]",
-            "size": 3.5,
-            "display": "flat",
-            "counts": "always",
-            "highlight": false
-          },
-          "tooltip": "handson_farm_charm.result"
-        },
-        {
-          "id": "result_2",
-          "pos": [
-            -13,
-            5,
-            -10
-          ],
-          "rotation": [
-            -50,
-            0,
-            0
-          ],
-          "slot": {
-            "slot": "result[2]",
-            "size": 3.5,
-            "display": "flat",
-            "counts": "always",
-            "highlight": false
-          },
-          "tooltip": "handson_farm_charm.result"
-        },
-        {
-          "id": "result_3",
-          "pos": [
-            -17,
-            5,
-            -10
-          ],
-          "rotation": [
-            -50,
-            0,
-            0
-          ],
-          "slot": {
-            "slot": "result[3]",
-            "size": 3.5,
-            "display": "flat",
-            "counts": "always",
-            "highlight": false
-          },
-          "tooltip": "handson_farm_charm.result"
-        },
-        {
-          "id": "result_4",
-          "pos": [
-            -13,
-            2,
-            -10
-          ],
-          "rotation": [
-            -50,
-            0,
-            0
-          ],
-          "slot": {
-            "slot": "result[4]",
-            "size": 3.5,
-            "display": "flat",
-            "counts": "always",
-            "highlight": false
-          },
-          "tooltip": "handson_farm_charm.result"
-        },
-        {
-          "id": "result_5",
-          "pos": [
-            -17,
-            2,
-            -10
-          ],
-          "rotation": [
-            -50,
-            0,
-            0
-          ],
-          "slot": {
-            "slot": "result[5]",
-            "size": 3.5,
-            "display": "flat",
-            "counts": "always",
-            "highlight": false
-          },
-          "tooltip": "handson_farm_charm.result"
-        },
-        {
-          "id": "result_6",
-          "pos": [
-            -13,
-            -1,
-            -10
-          ],
-          "rotation": [
-            -50,
-            0,
-            0
-          ],
-          "slot": {
-            "slot": "result[6]",
-            "size": 3.5,
-            "display": "flat",
-            "counts": "always",
-            "highlight": false
-          },
-          "tooltip": "handson_farm_charm.result"
-        },
-        {
-          "id": "result_7",
-          "pos": [
-            -17,
-            -1,
-            -10
-          ],
-          "rotation": [
-            -50,
-            0,
-            0
-          ],
-          "slot": {
-            "slot": "result[7]",
-            "size": 3.5,
-            "display": "flat",
-            "counts": "always",
-            "highlight": false
-          },
-          "tooltip": "handson_farm_charm.result"
         }
       ]
+    },
+    {
+      "id": "serve_area",
+      "collider": {
+        "from": [
+          1,
+          2.5,
+          3
+        ],
+        "to": [
+          11,
+          2.62,
+          13
+        ]
+      },
+      "tooltip": "handson_farm_charm.serving"
+    },
+    {
+      "id": "offer_vessel",
+      "pos": [
+        8,
+        8,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "arrival",
+      "pos": [
+        8,
+        8,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "recover_preview",
+      "pos": [
+        8,
+        8,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
     }
   ]
 }

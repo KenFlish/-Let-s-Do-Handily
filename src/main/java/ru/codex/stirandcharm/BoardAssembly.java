@@ -9,7 +9,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.CakeBlock;
 import net.satisfy.farm_and_charm.core.recipe.CuttingBoardAssemblyRecipe;
 
-/** The dishes the board puts together from layers, bottom first, as Hands-On Delight does. */
+/** Native dishes assembled in layers; only explicitly ordered recipes constrain their order. */
 public final class BoardAssembly {
     public enum Finish { PRESS, SANDWICH, TOSS, ROLL, SKEWER, KNEAD, ARRANGE, SHAPE, FREEZE }
 
@@ -55,6 +55,10 @@ public final class BoardAssembly {
         return false;
     }
 
+    public static boolean ready(Dish dish,List<ItemStack> layers){
+        return dish.holder().value() instanceof CuttingBoardAssemblyRecipe a && a.getFinisher().isPresent()
+            && layers.size()==a.getBaseIngredients().size() && a.accepts(layers);
+    }
     public static boolean isBase(Level level, ItemStack stack) {
         for (var dish : all(level)) if (dish.ingredients().get(dish.base()).test(stack)) return true;
         return false;
@@ -68,7 +72,7 @@ public final class BoardAssembly {
         return assign(dish, layers, true);
     }
 
-    /** Which ingredient every layer is; the first layer is the base. Null when they do not make the dish. */
+    /** Assign every layer to a distinct native ingredient. Null when they do not make the dish. */
     public static int[] assign(Dish dish, List<ItemStack> layers, boolean all) {
         var ingredients = dish.ingredients();
         if (layers.isEmpty() || layers.size() > ingredients.size() || all && layers.size() != ingredients.size()) return null;
@@ -78,6 +82,8 @@ public final class BoardAssembly {
             for (int i = 0; i < taken.length; i++) taken[i] = i;
             return taken;
         }
+        if(dish.holder().value() instanceof CuttingBoardAssemblyRecipe a && a.getFinisher().isPresent()
+            && layers.size()<=a.getBaseIngredients().size() && !a.accepts(layers))return null;
         // The base is a hint for the finish, not a straitjacket: a generic crafting recipe may
         // list its ingredients in any order, so every ingredient is tried as the first layer.
         int first = dish.base();

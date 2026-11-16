@@ -12,20 +12,25 @@ import net.minecraft.world.item.ItemStack;
 final class TrayFood {
     static final float[][] AT={{5.2F,1.1F,6.2F,-24},{9.8F,1.2F,8.4F,19},{6.9F,1.5F,10.1F,66},
         {10.1F,1.8F,5.8F,-48},{4.9F,2F,9.9F,32},{8F,2.25F,7.6F,-12}};
-    private record Built(com.pockyl.diegesis.api.client.MeshShape shape, net.minecraft.resources.ResourceLocation texture){}
+    record Built(com.pockyl.diegesis.api.client.MeshShape shape, net.minecraft.resources.ResourceLocation texture){}
     private record Key(net.minecraft.world.item.Item item, int components){}
     private static final Map<Key,Built> CACHE=new HashMap<>();
     private static Object model;
     static void frame(StationView view){
         var items=view.state().getItems("ingredients");
+        var meal=view.state().getItems("result")[0];
         for(int i=0;i<items.length;i++){
             var stack=items[i];
             view.node("ingredient_"+i).ifPresent(n -> {
                 var built=build(stack);
                 if(built!=null)n.setShape(built.shape(),built.texture());
-                n.setVisible(!stack.isEmpty());
+                n.setVisible(meal.isEmpty() && !stack.isEmpty());
             });
         }
+        view.node("cooked_food").ifPresent(n->{
+            var built=build(meal);n.setVisible(view.isInUse() && built!=null);
+            if(built!=null){n.setShape(built.shape(),built.texture());ContentFacing.turn(view,n);}
+        });
     }
     static Built build(ItemStack item){
         if(item.isEmpty())return null;
@@ -42,6 +47,11 @@ final class TrayFood {
         var sprite=Minecraft.getInstance().getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS).apply(built.texture());
         built.shape().mesh().draw(pose.last(),buffers.getBuffer(RenderType.cutout()),sprite,light);
         pose.popPose();
+    }
+    static void finished(ItemStack item,float y,PoseStack pose,MultiBufferSource buffers,int light){
+        var built=build(item);if(built==null)return;pose.pushPose();pose.translate(.5,y/16F,.5);pose.scale(1F/16,1F/16,1F/16);
+        var sprite=Minecraft.getInstance().getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS).apply(built.texture());
+        built.shape().mesh().draw(pose.last(),buffers.getBuffer(RenderType.cutout()),sprite,light);pose.popPose();
     }
     private TrayFood(){}
 }

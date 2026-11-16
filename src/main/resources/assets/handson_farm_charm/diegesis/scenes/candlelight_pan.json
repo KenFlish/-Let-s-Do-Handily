@@ -331,32 +331,6 @@
       "pickable": false,
       "children": [
         {
-          "id": "result",
-          "pos": [
-            -9,
-            16,
-            -9
-          ],
-          "rotation": [
-            -50,
-            0,
-            0
-          ],
-          "tooltip": "handson_farm_charm.result",
-          "collider": {
-            "from": [
-              -2.3,
-              -0.5,
-              -2.3
-            ],
-            "to": [
-              2.3,
-              0.7,
-              2.3
-            ]
-          }
-        },
-        {
           "id": "book_open",
           "pos": [
             8.329999999999998,
@@ -384,6 +358,62 @@
           }
         }
       ]
+    },
+    {
+      "id": "serve_area",
+      "collider": {
+        "from": [
+          4,
+          3.3,
+          4
+        ],
+        "to": [
+          12,
+          3.42,
+          12
+        ]
+      },
+      "tooltip": "handson_farm_charm.serving"
+    },
+    {
+      "id": "offer_vessel",
+      "pos": [
+        8,
+        8,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "arrival",
+      "pos": [
+        8,
+        8,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "recover_preview",
+      "pos": [
+        8,
+        8,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
+    },
+    {
+      "id": "cooked_food",
+      "pos": [
+        8,
+        2.6999999999999997,
+        8
+      ],
+      "pickable": false,
+      "hidden": true
     }
   ]
 }

@@ -12,12 +12,13 @@ import ru.codex.stirandcharm.*;
 final class WorldSoup {
     static void render(CookingPotBlockEntity pot,PoseStack pose,MultiBufferSource buffers,int light,float height){
         if(!ru.codex.stirandcharm.Broth.present(pot))return;
-        int rgb=BrothLook.color(pot.getLevel(),ru.codex.stirandcharm.Broth.contents(pot),pot.getItem(7));
+        int rgb=BrothLook.color(pot.getLevel(),pot.getBlockPos(),Broth.contents(pot),pot.getItem(7),((BrothState)pot).handily$mixture());
+        height=Broth.height(height>8,Broth.amount(pot));
         var sprite=Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(ResourceLocation.parse("minecraft:block/water_still"));
         var consumer=buffers.getBuffer(RenderType.translucent());var matrix=pose.last();
         float min=4.01F/16F,max=11.99F/16F,y=height/16F;
         float[][] points={{min,y,min,0,0},{min,y,max,0,1},{max,y,max,1,1},{max,y,min,1,0}};
-        for(var p:points)consumer.addVertex(matrix,p[0],p[1],p[2]).setColor(rgb>>16&255,rgb>>8&255,rgb&255,215)
+        for(var p:points)consumer.addVertex(matrix,p[0],p[1],p[2]).setColor(rgb>>16&255,rgb>>8&255,rgb&255,pot.getItem(7).isEmpty()?160:240)
             .setUv(sprite.getU(p[3]),sprite.getV(p[4])).setOverlay(net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY)
             .setLight(light).setNormal(matrix,0,1,0);
     }

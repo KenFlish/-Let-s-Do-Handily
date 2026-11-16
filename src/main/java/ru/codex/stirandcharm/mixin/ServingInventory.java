@@ -20,8 +20,14 @@ import org.spongepowered.asm.mixin.injection.callback.*;
 import ru.codex.stirandcharm.*;
 
 @Mixin({CookingPotBlockEntity.class, RoasterBlockEntity.class})
-public abstract class ServingInventory extends BlockEntity implements MealVessel {
+public abstract class ServingInventory extends BlockEntity implements MealVessel, BrothState {
     protected ServingInventory(BlockEntityType<?> type,BlockPos pos,BlockState state) { super(type,pos,state); }
+    @Unique private float handily$mixture;
+    @Unique private long handily$poured=Long.MIN_VALUE;
+    public long handily$poured(){return handily$poured;}
+    public void handily$poured(long tick){handily$poured=tick;setChanged();}
+    public float handily$mixture(){return handily$mixture;}
+    public void handily$mixture(float amount){float next=Math.clamp(amount,0,1);if(next!=handily$mixture){handily$mixture=next;setChanged();}}
     @Unique private ItemStack handily$dish = ItemStack.EMPTY;
     @Unique private int handily$pending;
     @Unique private int handily$before;
@@ -53,17 +59,22 @@ public abstract class ServingInventory extends BlockEntity implements MealVessel
     @Inject(method="craft", at=@At("TAIL"), remap=false)
     private void handily$afterCraft(Recipe<?> recipe, RegistryAccess access, CallbackInfo ci) {
         if (!MealServing.enabled(this)) return;
+        if((Object)this instanceof CookingPotBlockEntity)handily$mixture=0;
         int added = ((Container)this).getItem(7).getCount() - handily$before;
         ItemStack dish = MealServing.dish(recipe);
         if (added > 0 && !dish.isEmpty()) { handily$dish = dish; handily$pending += added; ((Container)this).setChanged(); }
     }
     @Inject(method="saveAdditional", at=@At("TAIL"), remap=false)
     private void handily$save(CompoundTag tag, HolderLookup.Provider provider, CallbackInfo ci) {
+        tag.putFloat("HandilyMixture",handily$mixture);
+        tag.putLong("HandilyPoured",handily$poured);
         tag.putInt("HandilyUnserved", handily$pending);
         if (!handily$dish.isEmpty()) tag.put("HandilyVessel", handily$dish.save(provider));
     }
     @Inject(method="loadAdditional", at=@At("TAIL"), remap=false)
     private void handily$load(CompoundTag tag, HolderLookup.Provider provider, CallbackInfo ci) {
+        handily$mixture=Math.clamp(tag.getFloat("HandilyMixture"),0,1);
+        handily$poured=tag.contains("HandilyPoured")?tag.getLong("HandilyPoured"):Long.MIN_VALUE;
         handily$pending = Math.max(0, tag.getInt("HandilyUnserved"));
         handily$dish = ItemStack.parseOptional(provider, tag.getCompound("HandilyVessel"));
     }

@@ -225,6 +225,7 @@ final class RecipeBook implements NodePainter {
         default boolean available(StationView view, Page page) { return true; }
 
         /** The player picked a page by a click. */
+        default void tabChanged(StationView view,String kind) {}
         default void picked(StationView view, Page page) {
         }
 
@@ -288,6 +289,7 @@ final class RecipeBook implements NodePainter {
 
     /** The player came to the pot: the book is open already, unless they put it away. */
     void opened(StationView view) {
+        source.tabChanged(view,TAB_MEMORY.get(source.memory()));
         if (!wanted && !putAway && view.state().data().getBoolean("book")) {
             toggle(view);
         }
@@ -613,7 +615,7 @@ final class RecipeBook implements NodePainter {
         } else if (hoveredTab != null) {
             if (!Objects.equals(tab, hoveredTab.kind())) {
                 tab = hoveredTab.kind();
-                TAB_MEMORY.put(source.memory(), tab);
+                TAB_MEMORY.put(source.memory(), tab);source.tabChanged(view,tab);
                 page = 0;
                 flip = 1.0F;
                 read(view);

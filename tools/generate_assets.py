@@ -32,9 +32,52 @@ def find_node(scene, node_id):
     raise KeyError(node_id)
 
 def write(path, data):
+    if path.startswith('diegesis/scenes/'):
+        modernize_scene(path, data)
     p = ROOT / path
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+def modernize_scene(path, scene):
+    """Keep controls on the real cookware; legacy output storage has no scene nodes."""
+    kind = Path(path).stem
+    def clean(nodes):
+        result = []
+        for node in nodes:
+            if node['id'].startswith('result_') or node['id'] == 'dump':
+                continue
+            if node['id'] == 'result' and kind != 'stove':
+                continue
+            if 'children' in node:
+                node['children'] = clean(node['children'])
+            if kind == 'crafting_bowl' and node['id'] == 'stir_handle':
+                node['tooltip'] = 'handson_farm_charm.whisk'
+            if kind == 'cutting_board' and node['id'] == 'surface':
+                node['collider'] = {'from':[1,1.06,3], 'to':[11,1.14,13]}
+            result.append(node)
+        return result
+    scene['nodes'] = clean(scene['nodes'])
+    if kind == 'stove':
+        return
+    height = {'cutting_board': 2.5, 'cooking_pot': 7.6, 'candlelight_pot': 9.2,
+              'crafting_bowl': 8, 'roaster': 4.2, 'candlelight_pan': 3.3, 'jam_pot': 7.1}[kind]
+    scene['nodes'] = [n for n in scene['nodes'] if n['id'] not in ('serve_area','offer_vessel','arrival','recover_preview','dump_handle','cooked_food') and not n['id'].startswith(('hand_','spill_'))]
+    scene['nodes'] += [
+        {'id':'serve_area', 'collider':{'from':[4,height,4], 'to':[12,height+.12,12]},
+         'tooltip':'handson_farm_charm.serving'},
+        {'id':'offer_vessel','pos':[8,8,8],'pickable':False,'hidden':True},
+        {'id':'arrival','pos':[8,8,8],'pickable':False,'hidden':True},
+        {'id':'recover_preview','pos':[8,8,8],'pickable':False,'hidden':True},
+    ]
+    if kind == 'cutting_board':
+        next(n for n in scene['nodes'] if n['id']=='serve_area')['collider']={'from':[1,2.5,3],'to':[11,2.62,13]}
+    if kind in ('cooking_pot','candlelight_pot'):
+        scene['nodes'] += [{'id':prefix+str(i),'pickable':False,'hidden':True} for i in range(6) for prefix in ('hand_','spill_')]
+    if kind in ('roaster','candlelight_pan','crafting_bowl'):
+        scene['nodes'].append({'id':'cooked_food','pos':[8,height-.6,8],'pickable':False,'hidden':True})
+    if kind == 'jam_pot':
+        scene['nodes'].append({'id':'dump_handle','collider':{'from':[-2,3,7],'to':[4,5,9]},
+                               'tooltip':'handson_farm_charm.jam.dump'})
 
 for bowl in [False, True]:
     nodes = []
@@ -178,6 +221,8 @@ jam['nodes']=[deepcopy(find_node(scene,'book_open'))]+[
 jam['captions']={'edge':'top','background':'#70000000'}
 write('diegesis/scenes/jam_pot.json',approach(jam))
 en = {
+    'whisk': 'Hold or click the whisk and move the mouse in circles',
+    'serving': 'Click: serve one into inventory. Shift: serve a batch. A matching vessel is required.',
     'pot_contents': 'Add ingredients. Click food to take it; right-click the soup with an empty cursor to recover a poured ingredient.',
     'pot_lid': 'Open / close the lid',
     'board.book_all': 'All recipes', 'board.book_tools': 'Axe work',
@@ -200,17 +245,19 @@ en = {
     'book.seconds': '%s s',
     'badge.ready': 'Ready · %s servings',
     'help': 'Click the handle, stir in circles. Click again to release. Esc: leave.',
-    'stir': 'Hold or click the handle and move in circles. Pot: up to 1.5x cooking speed',
+    'stir': 'Hold or click the spoon handle and move the mouse in circles',
     'result': 'Prepared food', 'containers': 'Empty serving containers', 'progress': 'Progress',
     'mixing': 'Mixing: %s%%', 'cooking': 'Cooking: %s%%', 'no_heat': 'No heat source — %s%%',
     'available': 'Click to add the missing ingredients for one recipe', 'unavailable': 'Ingredients missing or station cannot fit this recipe',
     'fill_failed': 'Cannot add this recipe: check ingredients, free space and the lid.',
     'serving_failed': 'A matching serving container and free inventory space are required',
     'serve_with': '%s — serve with: %s',
-    'book.pot_time': '23–35 s',
+    'book.pot_time': '35 s',
     'next': 'Next page', 'prev': 'Previous page',
 }
 ru = {
+    'whisk': 'Удерживайте или возьмите венчик щелчком и двигайте мышь по кругу',
+    'serving': 'Щелчок: порция в инвентарь. Shift: партия. Нужна подходящая посуда.',
     'pot_contents': 'Добавьте ингредиенты. Щелчок по продукту: забрать. ПКМ по супу с пустым курсором: вернуть налитый ингредиент.',
     'pot_lid': 'Открыть / закрыть крышку',
     'board.book_all': 'Все рецепты', 'board.book_tools': 'Работа топором',
@@ -233,7 +280,7 @@ ru = {
     'book.seconds': '%s с',
     'badge.ready': 'Готово · порций: %s',
     'help': 'Нажмите на ручку и двигайте мышь по кругу. Ещё щелчок: отпустить. Esc: выйти.',
-    'stir': 'Удерживайте или возьмите ручку щелчком и вращайте мышь. Котёл: скорость до ×1,5',
+    'stir': 'Удерживайте или возьмите ложку щелчком и двигайте мышь по кругу',
     'result': 'Готовая еда', 'containers': 'Пустая посуда для порций', 'progress': 'Готовность',
     'mixing': 'Замешивание: %s%%', 'cooking': 'Приготовление: %s%%', 'no_heat': 'Нет источника тепла — %s%%',
     'available': 'Нажмите, чтобы добавить недостающие ингредиенты одного рецепта',
@@ -241,7 +288,7 @@ ru = {
     'fill_failed': 'Не удалось добавить рецепт: проверьте ингредиенты, свободное место и крышку.',
     'serving_failed': 'Для получения нужны подходящая посуда и свободное место',
     'serve_with': '%s — для подачи: %s',
-    'book.pot_time': '23–35 с',
+    'book.pot_time': '35 с',
     'next': 'Следующая страница', 'prev': 'Предыдущая страница',
 }
 for lang, messages in [('en_us', en), ('ru_ru', ru)]:
