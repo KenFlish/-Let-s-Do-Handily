@@ -7,7 +7,7 @@ modId="handson_farm_charm"
 version="${version}"
 displayName="[Let's Do] Handily"
 authors="[Let's Do] Handily contributors"
-description='''Cook Farm & Charm dishes in the world: pot, bowl, cutting board, mincer, stove and roaster. Includes optional Candlelight stations and Bakery jam pots. Inspired by Hands-On Delight. Built on Diegesis.'''
+description='''Cook Farm & Charm dishes in the world: pot, bowl, cutting board, stove and roaster. Includes optional Candlelight stations and Bakery jam pots. Inspired by Hands-On Delight. Built on Diegesis.'''
 
 [[mixins]]
 config="handson_farm_charm.mixins.json"

@@ -26,7 +26,7 @@ public enum Appliance {
         return recipe instanceof RoasterRecipe r ? r.getContainer().copy() : ItemStack.EMPTY;
     }
     public boolean enabled() {
-        return switch (this) { case MINCER -> Settings.MINCER.get(); case STOVE -> Settings.STOVE.get(); case ROASTER -> Settings.ROASTER.get(); };
+        return switch (this) { case MINCER -> false; case STOVE -> Settings.STOVE.get(); case ROASTER -> Settings.ROASTER.get(); };
     }
     /** The native grill numbers are in world axes, unlike the scene which follows the stove's facing. */
     public static int grillSlot(int sceneSlot, net.minecraft.core.Direction facing) {

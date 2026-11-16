@@ -82,7 +82,7 @@ for bowl in [False, True]:
 
 # Each appliance keeps its own native input, fuel and container slots.
 from copy import deepcopy
-for kind, count in [('mincer', 1), ('stove', 3), ('roaster', 6)]:
+for kind, count in [('stove', 3), ('roaster', 6)]:
     appliance = deepcopy(scene)
     appliance['work_plane'] = 18 if kind == 'stove' else 14
     nodes = []

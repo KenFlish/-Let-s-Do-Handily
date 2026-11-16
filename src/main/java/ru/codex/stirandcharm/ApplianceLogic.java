@@ -61,10 +61,9 @@ public final class ApplianceLogic implements StationLogic {
                 .accept(ctx.level().getGameTime(), data.getFloat("x"), data.getFloat("z"));
             if (sample == null || !sample.crank()) return;
             var mincer = (MincerBlockEntity) container;
-            if (!container.getItem(0).isEmpty() && kind.recipes(ctx.level()).stream()
-                    .anyMatch(h -> h.value().getIngredients().stream().anyMatch(i -> i.test(container.getItem(0))))) {
-                mincer.crank();
-            }
+            // The native mincer turns its handle even when there is nothing to grind; only the
+            // native tick decides whether a recipe can consume input. Keep the validated turn.
+            mincer.crank();
         } else if (kind == Appliance.STOVE && action.equals("ignite")) {
             var stove=(StoveBlockEntity)container;boolean was=stove.isLit();stove.ignite();
             if(!was && stove.isLit())ctx.level().playSound(null,ctx.pos(),net.minecraft.sounds.SoundEvents.FLINTANDSTEEL_USE,net.minecraft.sounds.SoundSource.BLOCKS,1,1);

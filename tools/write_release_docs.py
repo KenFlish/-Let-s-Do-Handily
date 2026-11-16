@@ -11,12 +11,12 @@ dest.mkdir(parents=True,exist_ok=True)
 name='handily-neoforge-1.21.1-'+version
 for suffix in ('.jar','-sources.jar'):
     shutil.copy2(root/'build/libs'/(name+suffix),dest/(name+suffix))
-for file in ('README.md','TESTING.md','LICENSE','LICENSE_HANDSON_DELIGHT','THIRD_PARTY_NOTICES.md'):
+for file in ('README.md','TESTING.md','CHANGELOG.md','LICENSE','LICENSE_HANDSON_DELIGHT','THIRD_PARTY_NOTICES.md'):
     shutil.copy2(root/file,dest/file)
 files=[]
 for directory in ('src','tools','gradle'):
     files.extend(p for p in (root/directory).rglob('*') if p.is_file() and '__pycache__' not in p.parts)
-for file in ('.gitignore','build.gradle','settings.gradle','gradle.properties','gradlew','gradlew.bat','dependencies.lock.json','README.md','TESTING.md','LICENSE','LICENSE_HANDSON_DELIGHT','THIRD_PARTY_NOTICES.md'):
+for file in ('.gitignore','build.gradle','settings.gradle','gradle.properties','gradlew','gradlew.bat','dependencies.lock.json','README.md','TESTING.md','CHANGELOG.md','LICENSE','LICENSE_HANDSON_DELIGHT','THIRD_PARTY_NOTICES.md'):
     files.append(root/file)
 with zipfile.ZipFile(dest/('Handily-'+version+'-project.zip'),'w',zipfile.ZIP_DEFLATED) as archive:
     for p in sorted(files):archive.write(p,Path('handily')/p.relative_to(root))

@@ -163,13 +163,54 @@ public final class HandilyCompatTests {
         var tag=new CompoundTag();tag.putInt("mark",0);tag.putFloat("x",6);tag.putFloat("z",8);logic.onCustomAction(c,p,"chop",tag);
         h.assertTrue(board.getPendingChops()==0 && board.getPending().getCount()==2,"A full output cannot consume queued food or tool durability");h.succeed();
     }
-    @GameTest(template="empty") public static void boardCakeReturnsBuckets(GameTestHelper h){
+    @GameTest(template="empty") public static void boardOnlyAssemblesFarmCharmCrafts(GameTestHelper h){
         var c=setup(h,"farm_and_charm:cutting_board","cutting_board");var logic=new BoardLogic(c);var p=h.makeMockPlayer(GameType.SURVIVAL);
-        var cake=BoardRecipes.all(c.level()).stream().filter(r -> r.value() instanceof CraftingRecipe && r.value().getResultItem(c.level().registryAccess()).is(Items.CAKE)).findFirst().orElseThrow();
-        for(var ingredient:BoardDishes.needs(cake.value()))p.getInventory().add(ingredient.getItems()[0].copyWithCount(1));
-        logic.onCustomAction(c,p,"fill",fill(cake));logic.onCustomAction(c,p,"assemble",new CompoundTag());
-        h.assertTrue(Arrays.stream(c.state().getItems("result")).filter(s -> s.is(Items.CAKE)).mapToInt(ItemStack::getCount).sum()==1,"Native cake recipe assembles on the board");
-        h.assertTrue(p.getInventory().items.stream().filter(s -> s.is(Items.BUCKET)).mapToInt(ItemStack::getCount).sum()==3,"All three milk buckets are returned to the cook");h.succeed();
+        var crafts=BoardDishes.crafting(c.level());
+        h.assertTrue(!crafts.isEmpty(),"Farm & Charm has food crafts for the board");
+        h.assertTrue(crafts.stream().allMatch(r -> r.id().getNamespace().equals("farm_and_charm")),
+            "The board never turns into a generic crafting table for other mods");
+        h.assertTrue(crafts.stream().noneMatch(r -> r.value().getResultItem(c.level().registryAccess()).is(Items.CAKE)),
+            "Vanilla cake stays in the crafting table");
+        var holder=crafts.stream().filter(r -> r.value().getIngredients().stream().allMatch(i -> i.getItems().length>0))
+            .findFirst().orElseThrow();
+        for(var ingredient:holder.value().getIngredients())p.getInventory().add(ingredient.getItems()[0].copyWithCount(1));
+        logic.onCustomAction(c,p,"fill",fill(holder));logic.onCustomAction(c,p,"assemble",new CompoundTag());
+        var expected=KitchenRecipes.result(c.level(),holder.value());
+        h.assertTrue(Arrays.stream(c.state().getItems("result")).anyMatch(s -> ItemStack.isSameItemSameComponents(s,expected)),
+            "A Farm & Charm crafting dish still assembles on the board: "+holder.id());h.succeed();
+    }
+    @GameTest(template="empty") public static void boardPlacedStackPersistsWithoutEmptyEntry(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:cutting_board","cutting_board");var logic=new BoardLogic(c);
+        var board=(CuttingBoardBlockEntity)c.blockEntity();var p=h.makeMockPlayer(GameType.SURVIVAL);
+        ItemStack base=ItemStack.EMPTY;
+        for(var dish:BoardAssembly.all(c.level())) {
+            var ingredient=dish.ingredients().get(dish.base());
+            for(var candidate:ingredient.getItems()) {
+                var stack=candidate.copyWithCount(1);
+                if(stack.getMaxStackSize()>2 && !BoardTools.knife(stack) && BoardRecipes.cut(c.level(),stack).isEmpty()
+                    && BoardAssembly.isBase(c.level(),stack)) {base=stack;break;}
+            }
+            if(!base.isEmpty())break;
+        }
+        h.assertTrue(!base.isEmpty(),"A non-cutting dish base exists");
+        var stack=base.copyWithCount(3);p.getInventory().setItem(0,stack);p.getInventory().selected=0;
+        var tag=new CompoundTag();tag.putInt("from",0);logic.onCustomAction(c,p,"place",tag);
+        h.assertTrue(board.getItems().size()==1 && ItemStack.isSameItemSameComponents(board.getItems().get(0),base)
+            && board.getItems().get(0).getCount()==3,"The whole base stack is kept once, with no AIR entry");
+        var saved=board.saveWithoutMetadata(c.level().registryAccess());
+        h.assertTrue(saved.getList("Items",10).size()==1,"Native save has exactly one real item");
+        var restored=new CuttingBoardBlockEntity(c.pos(),c.blockState());
+        restored.loadWithComponents(saved,c.level().registryAccess());
+        h.assertTrue(restored.getItems().size()==1 && restored.getItems().get(0).getCount()==3,
+            "The native board reloads the same layer count without an empty stack");h.succeed();
+    }
+    @GameTest(template="empty") public static void boardTopLayerComesBackAsAWhole(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:cutting_board","cutting_board");var logic=new BoardLogic(c);
+        var board=(CuttingBoardBlockEntity)c.blockEntity();var p=h.makeMockPlayer(GameType.SURVIVAL);
+        board.addItem(new ItemStack(Items.CARROT,3));
+        logic.onCustomAction(c,p,"take",new CompoundTag());
+        h.assertTrue(board.getItems().isEmpty(),"Removing the top layer clears only that layer");
+        h.assertTrue(p.getInventory().countItem(Items.CARROT)==3,"Right-click returns the whole top layer, as HOD does");h.succeed();
     }
     @GameTest(template="empty") public static void cleaverAndKnifeNeedTheSameChops(GameTestHelper h){
         var recipe=BoardRecipes.all(h.getLevel()).stream().filter(r -> r.value() instanceof CuttingBoardRecipe c && c.getIngredient().getItems().length>0)
@@ -194,24 +235,18 @@ public final class HandilyCompatTests {
         h.assertTrue(board.isEmpty() && made==3*per,"Three layers make three rounds, not one");
         h.succeed();
     }
-    @GameTest(template="empty") public static void mincerCrankNeedsAWholeTurn(GameTestHelper h){
-        var motion=new CrankMotion();boolean cranked=false;long tick=0;
-        for(int i=0;i<=20;i++){
-            double a=i*.42;var sample=motion.accept(tick++,(float)Math.cos(a)*2,(float)Math.sin(a)*2);
-            if(sample!=null && sample.crank())cranked=true;
-        }
-        h.assertTrue(cranked,"A full circle turns the crank");
-        var straight=new CrankMotion();boolean straightCranked=false;
-        for(int i=0;i<=20;i++){var sample=straight.accept(i,1+i*.05F,.5F);if(sample!=null && sample.crank())straightCranked=true;}
-        h.assertTrue(!straightCranked,"A straight drag does not turn the crank");h.succeed();
+    @GameTest(template="empty") public static void removedStationsStayNative(GameTestHelper h){
+        for(String id:new String[]{"mincer","tea_kettle","copper_tea_kettle"})
+            h.assertTrue(Diegesis.stationType(StirAndCharm.id(id)).isEmpty(),"No Handily scene for "+id);
+        h.succeed();
     }
     @GameTest(template="empty") public static void cookingDurationsAndCameraDirections(GameTestHelper h){
         h.assertTrue(CookingPotBlockEntity.getMaxCookingTime()==700 && RoasterBlockEntity.getMaxRoastingTime()==700,"45 seconds changed to 35 seconds in native timers");
         var board=Diegesis.stationType(StirAndCharm.BOARD).orElseThrow();
-        var mincer=Diegesis.stationType(StirAndCharm.id("mincer")).orElseThrow();
+        h.assertTrue(Diegesis.stationType(StirAndCharm.id("mincer")).isEmpty(),"Mincer has no scene");
         var oven=Diegesis.stationType(StirAndCharm.id("stove")).orElseThrow();
-        h.assertTrue(board.orientation()==StationType.Orientation.BLOCK && mincer.orientation()==StationType.Orientation.BLOCK,
-            "Board and mincer stay aligned with the block; approach shots supply the camera side");
+        h.assertTrue(board.orientation()==StationType.Orientation.BLOCK,
+            "Board stays aligned with the block; approach shots supply the camera side");
         h.assertTrue(oven.orientation()==StationType.Orientation.BLOCK,"Oven keeps a fixed front view");h.succeed();
     }
     @GameTest(template="empty") public static void candlelightOpenPotAndSoupWithoutStirring(GameTestHelper h){
@@ -220,6 +255,98 @@ public final class HandilyCompatTests {
         logic.onOpen(c,p);h.assertTrue(!c.blockState().hasProperty(RoasterLid.OPEN),"Candlelight pot has no lid mechanic");
         ((CookingPotBlockEntity)c.blockEntity()).setItem(0,new ItemStack(Items.WATER_BUCKET));logic.tick(c);
         h.assertTrue(c.state().getTank("broth").amount()>0 && c.state().getControl("spoon_x")==0,"Liquid is present before the first stirring input");
+        h.succeed();
+    }
+    @GameTest(template="empty",timeoutTicks=260) public static void mixingBowlUsesNativeWhiskAndFinishes(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:crafting_bowl","crafting_bowl");var bowl=(CraftingBowlBlockEntity)c.blockEntity();
+        var logic=new KitchenLogic(c,true);var p=h.makeMockPlayer(GameType.SURVIVAL);
+        var holder=KitchenRecipes.all(c.level(),true).stream().filter(r -> r.value().getIngredients().stream().allMatch(i -> i.getItems().length>0)).findFirst().orElseThrow();
+        for(var ingredient:holder.value().getIngredients())p.getInventory().add(ingredient.getItems()[0].copyWithCount(1));
+        logic.onCustomAction(c,p,"fill",fill(holder));
+        h.assertTrue(bowl.hasRecipe(),"The bowl keeps native recipe matching");
+        for(int i=0;i<220;i++){bowl.markStirred(c.level());bowl.addWhiskImpulse(.25F);bowl.tick(c.level(),c.pos(),c.blockState(),bowl);}
+        for(int i=0;i<10;i++)bowl.tick(c.level(),c.pos(),c.blockState(),bowl);
+        h.assertTrue(bowl.isFinished(),"Native whisk motion finishes the bowl");
+        var expected=KitchenRecipes.result(c.level(),holder.value());
+        h.assertTrue(ItemStack.isSameItemSameComponents(bowl.getItem(4),expected),"The native bowl output and count are preserved");
+        h.succeed();
+    }
+    @GameTest(template="empty",timeoutTicks=280) public static void stoveUsesNativeFuelAndCookTime(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:stove","stove");var stove=(StoveBlockEntity)c.blockEntity();
+        var holder=Appliance.STOVE.recipes(c.level()).stream().filter(r -> r.value().getIngredients().stream().allMatch(i -> i.getItems().length>0)).findFirst().orElseThrow();
+        int slot=1;for(var ingredient:holder.value().getIngredients())stove.setItem(slot++,ingredient.getItems()[0].copyWithCount(1));
+        stove.setItem(4,new ItemStack(Items.COAL,8));
+        h.assertTrue(stove.ignite(),"The stove accepts native fuel and ignites");
+        for(int i=0;i<StoveBlockEntity.TOTAL_COOKING_TIME+2;i++)stove.tick(c.level(),c.pos(),c.blockState(),stove);
+        h.assertTrue(!stove.getItem(0).isEmpty(),"The stove cooks through its native timer and fuel");
+        h.succeed();
+    }
+    private static void roasterCooks(GameTestHelper h,String block,String station){
+        var c=setup(h,block,station);var roaster=(RoasterBlockEntity)c.blockEntity();
+        var holder=Appliance.ROASTER.recipes(c.level()).stream().filter(r -> r.value().getIngredients().stream().allMatch(i -> i.getItems().length>0)).findFirst().orElseThrow();
+        int slot=0;for(var ingredient:holder.value().getIngredients())roaster.setItem(slot++,ingredient.getItems()[0].copyWithCount(1));
+        if(holder.value() instanceof RoasterRecipe rr && !rr.getContainer().isEmpty())roaster.setItem(6,rr.getContainer().copyWithCount(1));
+        c.level().setBlockAndUpdate(c.pos().below(),Blocks.REDSTONE_BLOCK.defaultBlockState());
+        for(int i=0;i<RoasterBlockEntity.getMaxRoastingTime()+2;i++)roaster.tick(c.level(),c.pos(),c.blockState(),roaster);
+        h.assertTrue(!roaster.getItem(7).isEmpty(),station+" roasts a native recipe into its native output");
+    }
+    @GameTest(template="empty",timeoutTicks=820) public static void roasterCooksNativeRecipe(GameTestHelper h){
+        roasterCooks(h,"farm_and_charm:roaster","roaster");h.succeed();
+    }
+    @GameTest(template="empty",timeoutTicks=820) public static void candlelightPanCooksNativeRecipe(GameTestHelper h){
+        if(!net.neoforged.fml.ModList.get().isLoaded("candlelight")){h.succeed();return;}
+        roasterCooks(h,"candlelight:cooking_pan","candlelight_pan");h.succeed();
+    }
+    @GameTest(template="empty",timeoutTicks=260) public static void mincerConsumesInputThroughNativeTimer(GameTestHelper h){
+        var pos=h.absolutePos(new net.minecraft.core.BlockPos(2,2,2));
+        var level=h.getLevel();level.setBlockAndUpdate(pos,BuiltInRegistries.BLOCK.get(net.minecraft.resources.ResourceLocation.parse("farm_and_charm:mincer")).defaultBlockState());
+        var mincer=(MincerBlockEntity)level.getBlockEntity(pos);
+        var holder=Appliance.MINCER.recipes(level).stream().filter(r -> r.value() instanceof MincerRecipe m && m.getInput().getItems().length>0).findFirst().orElseThrow();
+        mincer.setItem(0,((MincerRecipe)holder.value()).getInput().getItems()[0].copyWithCount(3));
+        for(int n=0;n<24;n++){mincer.crank();for(int t=0;t<12;t++)mincer.tick(level,pos,level.getBlockState(pos),mincer);}
+        h.assertTrue(mincer.getItem(0).getCount()<3,"A valid crank consumes native mincer input");
+        h.succeed();
+    }
+    @GameTest(template="empty",timeoutTicks=260) public static void boardCutsFullSixteenBatch(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:cutting_board","cutting_board");var logic=new BoardLogic(c);
+        var board=(CuttingBoardBlockEntity)c.blockEntity();var p=h.makeMockPlayer(GameType.SURVIVAL);
+        var recipe=(CuttingBoardRecipe)BoardRecipes.all(c.level()).stream().filter(r -> r.value() instanceof CuttingBoardRecipe && !r.id().getPath().startsWith("stripping/")
+            && ((CuttingBoardRecipe)r.value()).getIngredient().getItems().length>0).findFirst().orElseThrow().value();
+        var tool=BuiltInRegistries.ITEM.stream().map(ItemStack::new).filter(s -> BoardTools.knife(s) && s.isDamageableItem()).findFirst().orElseThrow();
+        p.inventoryMenu.setCarried(tool.copy());p.inventoryMenu.setCarried(recipe.getIngredient().getItems()[0].copyWithCount(16));
+        logic.onCustomAction(c,p,"place",new CompoundTag());
+        h.assertTrue(board.getPending().getCount()==16,"Sixteen items can be queued");
+        int marks=Math.min(3,Math.max(1,recipe.getChops()));
+        for(int i=0;i<marks;i++){int mark=i;h.runAtTickTime(1+i*5,()->{var tag=new CompoundTag();tag.putInt("mark",mark);tag.putFloat("at",8);p.inventoryMenu.setCarried(tool.copy());logic.onCustomAction(c,p,"chop",tag);});}
+        h.runAtTickTime(marks*5+5,()->{
+            h.assertTrue(board.getPending().isEmpty(),"The last mark cuts the whole sixteen-item queue");
+            int expected=recipe.getResult().getCount()*16;
+            int made=Arrays.stream(c.state().getItems("result")).filter(s -> ItemStack.isSameItemSameComponents(s,recipe.getResult())).mapToInt(ItemStack::getCount).sum();
+            h.assertTrue(made==expected,"Every queued item yields its native result: wanted "+expected+", got "+made);
+            h.succeed();
+        });
+    }
+    @GameTest(template="empty") public static void bowlAndStoveInventoriesAreNative(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:crafting_bowl","crafting_bowl");var logic=new KitchenLogic(c,true);
+        var p=h.makeMockPlayer(GameType.SURVIVAL);c.state().setItem(SlotRef.of("ingredients",0),new ItemStack(Items.WHEAT));
+        h.assertTrue(((CraftingBowlBlockEntity)c.blockEntity()).getItem(0).is(Items.WHEAT),"Bowl slots stay the native inventory");
+        var s=setup(h,"farm_and_charm:stove","stove");var stoveLogic=new ApplianceLogic(s,Appliance.STOVE);
+        s.state().setItem(SlotRef.of("ingredients",0),new ItemStack(Items.POTATO));
+        h.assertTrue(((StoveBlockEntity)s.blockEntity()).getItem(1).is(Items.POTATO),"Stove slots stay the native inventory");
+        h.succeed();
+    }
+    @GameTest(template="empty") public static void candlelightOpenPotShapeHasNoLidCollision(GameTestHelper h){
+        if(!net.neoforged.fml.ModList.get().isLoaded("candlelight")){h.succeed();return;}
+        var c=setup(h,"candlelight:cooking_pot","candlelight_pot");
+        var base=c.blockState();
+        net.minecraft.world.level.block.state.properties.Property support=base.getBlock().getStateDefinition().getProperty("needs_support");
+        for(var facing:Direction.Plane.HORIZONTAL){
+            var state=base.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING,facing);
+            if(support!=null)state=state.setValue(support,true);
+            var shape=state.getShape(c.level(),c.pos());
+            h.assertTrue(!shape.isEmpty() && shape.max(net.minecraft.core.Direction.Axis.Y)<=.751D,
+                "Open Candlelight pot shape keeps walls and handles but no lid collision from any facing/support state");
+        }
         h.succeed();
     }
     private static CookingPotBlockEntity cookedPot(GameTestHelper h) {
@@ -319,6 +446,35 @@ public final class HandilyCompatTests {
             h.assertTrue(p.getInventory().items.stream().anyMatch(s -> s.is(recipe.value().getResult().getItem())),"Native filled jam and its components are given to the player");h.succeed();
         });
         }
+    }
+    @GameTest(template="empty",timeoutTicks=40) public static void mincerEmptyInputStillCranks(GameTestHelper h){
+        var pos=h.absolutePos(new net.minecraft.core.BlockPos(2,2,2));var level=h.getLevel();
+        level.setBlockAndUpdate(pos,BuiltInRegistries.BLOCK.get(net.minecraft.resources.ResourceLocation.parse("farm_and_charm:mincer")).defaultBlockState());
+        var mincer=(MincerBlockEntity)level.getBlockEntity(pos);
+        mincer.crank();
+        for(int i=0;i<5;i++)mincer.tick(level,pos,level.getBlockState(pos),mincer);
+        h.assertTrue(mincer.getCrankSpeed()>0 && mincer.getInterpolatedCrankAngle(1)>0,"Native empty mincer handle rotates");
+        h.succeed();
+    }
+    @GameTest(template="empty",timeoutTicks=920) public static void candlelightPotCooksNativelyAndRequiresHeat(GameTestHelper h){
+        if(!net.neoforged.fml.ModList.get().isLoaded("candlelight")){h.succeed();return;}
+        var c=setup(h,"candlelight:cooking_pot","candlelight_pot");var pot=(CookingPotBlockEntity)c.blockEntity();
+        var holder=KitchenRecipes.all(c.level(),false).stream().filter(r -> r.value() instanceof CookingPotRecipe p && !p.requiresLearning()
+            && p.isContainerRequired() && p.getIngredients().stream().allMatch(i -> !i.isEmpty() && i.getItems().length>0)).findFirst().orElseThrow();
+        int slot=0;for(var ingredient:holder.value().getIngredients())pot.setItem(slot++,ingredient.getItems()[0].copyWithCount(1));
+        c.level().setBlockAndUpdate(c.pos().below(),Blocks.AIR.defaultBlockState());
+        for(int i=0;i<20;i++)pot.tick(c.level(),c.pos(),c.blockState(),pot);
+        h.assertTrue(((ru.codex.stirandcharm.mixin.CookingPotAccess)pot).stirandcharm$cookingTime()==0,
+            "Candlelight pot without native heat does not cook");
+        c.level().setBlockAndUpdate(c.pos().below(),Blocks.REDSTONE_BLOCK.defaultBlockState());
+        for(int i=0;i<CookingPotBlockEntity.getMaxCookingTime();i++)pot.tick(c.level(),c.pos(),c.blockState(),pot);
+        h.assertTrue(!pot.getItem(7).isEmpty(),"Candlelight pot cooks through its native inventory and timer");
+        var p=h.makeMockPlayer(GameType.SURVIVAL);var dish=((MealVessel)pot).handily$vessel();
+        h.assertTrue(!dish.isEmpty(),"The native Candlelight recipe requires a serving vessel");
+        p.inventoryMenu.setCarried(dish.copyWithCount(1));int before=pot.getItem(7).getCount();
+        int taken=MealServing.collect(p,pot,true,false);
+        h.assertTrue(taken==1 && pot.getItem(7).getCount()==before-1,"Candlelight serving takes one native portion");
+        h.succeed();
     }
     @GameTest(template="empty") public static void potNativeTimingHeatAndServing(GameTestHelper h){
         var c=setup(h,"farm_and_charm:cooking_pot","cooking_pot");var pot=(CookingPotBlockEntity)c.blockEntity();

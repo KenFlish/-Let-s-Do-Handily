@@ -11,7 +11,11 @@ import net.satisfy.farm_and_charm.core.recipe.CuttingBoardAssemblyRecipe;
 /** Native assembly plus food crafting, with the original recipe and its container remainders. */
 public final class BoardDishes {
     public static List<RecipeHolder<?>> crafting(Level level) {
+        // Only Farm & Charm's own food crafts belong to this station; every other mod's general
+        // crafting recipe would turn the board into a second crafting table (HOD keeps its own
+        // Farmer's Delight recipes for its own board).
         return level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING).stream()
+            .filter(h -> h.id().getNamespace().equals("farm_and_charm"))
             .filter(h -> !h.value().isSpecial() && h.value().getIngredients().stream().filter(i -> !i.isEmpty()).count()>=2)
             .filter(h -> {
                 ItemStack out=h.value().getResultItem(level.registryAccess());

@@ -32,16 +32,17 @@ final class BoardBehavior implements StationBehavior {
     private float clock,assembling;
     private ItemStack assemblyDish=ItemStack.EMPTY;
     private record Step(float at,Runnable run){}
-    public void onSceneReady(StationView view) {view.node("book_open").ifPresent(n -> n.setPainter(book));view.node("dish").ifPresent(n -> n.setVisible(false));clock=0;steps.clear();assembling=0;ApproachCamera.open(view);}
+    public void onSceneReady(StationView view) {view.node("book_open").ifPresent(n -> n.setPainter(book));view.node("dish").ifPresent(n -> n.setVisible(false));clock=0;steps.clear();assembling=0;reset(view);ApproachCamera.open(view);}
     public void onOpen(StationView view) {
         view.setInventoryFilter(null);ApproachCamera.open(view);book.opened(view);
+        reset(view);
         var player=Minecraft.getInstance().player;
         if(view.openedByUse() && player!=null && !BoardTools.canStick(player.getMainHandItem())) {
             var tag=new CompoundTag();tag.putInt("from",player.getInventory().selected);tag.putBoolean("one",false);view.sendAction("place",tag);
         }
     }
-    public void onClose(StationView view) {book.shut(view);steps.clear();assembling=0;view.node("dish").ifPresent(n -> n.setVisible(false));}
-    public void onStateChanged(StationView view,StationState.Changes changes){book.invalidate();}
+    public void onClose(StationView view) {book.shut(view);steps.clear();assembling=0;reset(view);}
+    public void onStateChanged(StationView view,StationState.Changes changes){book.invalidate();if(assembling<=0)reset(view);}
     @Override public void onEffect(StationView view,net.minecraft.resources.ResourceLocation effect,String node,CompoundTag data){
         if(effect.equals(StirAndCharm.id("assembled"))){
             var layers=new ArrayList<ItemStack>();
@@ -87,8 +88,10 @@ final class BoardBehavior implements StationBehavior {
         }
         mesh(view,"food",pending,BoardTools.ITEM_SIZE,cuts,chops,total);
         var layers=view.state().getItems("ingredients");
-        for(int i=0;i<9;i++) mesh(view,"layer_"+i,layers[i],8,List.of(),0,0);
-        if(assembling<=0) for (int i=0;i<9;i++) view.node("layer_"+i).ifPresent(n -> ContentFacing.turn(view,n));
+        if(assembling<=0) {
+            for(int i=0;i<9;i++) mesh(view,"layer_"+i,layers[i],8,List.of(),0,0);
+            for (int i=0;i<9;i++) view.node("layer_"+i).ifPresent(n -> ContentFacing.turn(view,n));
+        }
         view.node("food").ifPresent(n -> ContentFacing.turn(view,n));
         ItemVoxels.Cut target=mark(view,pending,chops);
         if(!marksKey.equals(itemKey)){marksKey=itemKey;marksShape=marks(pending,target);}
@@ -119,9 +122,11 @@ final class BoardBehavior implements StationBehavior {
     private static ItemStack tool(StationView view) {
         var food=view.state().getItems("pending")[0];var parked=view.state().getItems("knife")[0];
         if(food.isEmpty())return ItemStack.EMPTY;
+        if(Arrays.stream(view.state().getItems("ingredients")).anyMatch(stack -> !stack.isEmpty()))return ItemStack.EMPTY;
         if(BoardTools.supports(parked,food))return parked;
         var p=Minecraft.getInstance().player;if(p==null)return ItemStack.EMPTY;
-        if(BoardTools.supports(p.inventoryMenu.getCarried(),food))return p.inventoryMenu.getCarried();
+        var carried=p.inventoryMenu.getCarried();
+        if(!carried.isEmpty())return BoardTools.supports(carried,food)?carried:ItemStack.EMPTY;
         if(BoardTools.supports(p.getMainHandItem(),food))return p.getMainHandItem();
         for(int i=0;i<p.getInventory().getContainerSize();i++)if(BoardTools.supports(p.getInventory().getItem(i),food))return p.getInventory().getItem(i);
         return ItemStack.EMPTY;
@@ -175,6 +180,12 @@ final class BoardBehavior implements StationBehavior {
         if(c.node().equals("book_open")){if(c.button()==0)book.click(view);return;}
         if(!c.node().equals("surface") && !c.node().equals("mouth"))return;
         if(!view.state().getItems("knife")[0].isEmpty() && view.state().getItems("pending")[0].isEmpty()) {view.sendAction("take",new CompoundTag());return;}
+        boolean layers=Arrays.stream(view.state().getItems("ingredients")).anyMatch(stack -> !stack.isEmpty());
+        if(layers) {
+            boolean ready=!view.state().data().getString("dish").isEmpty();
+            view.sendAction(c.button()==0&&ready?"assemble":"take",new CompoundTag());
+            return;
+        }
         if(c.button()==1){view.sendAction("take",new CompoundTag());return;}
         if(c.button()!=0)return;
         if(!view.state().getItems("pending")[0].isEmpty()) {
@@ -208,6 +219,15 @@ final class BoardBehavior implements StationBehavior {
     }
 
     private void after(float seconds,Runnable run){steps.add(new Step(clock+Math.max(0,seconds),run));}
+    /** Puts every reused node back to its static transform; animations and cached shapes may leave scale, offset or tint behind. */
+    private void reset(StationView view){
+        meshes.clear();cutsKey="";marksKey="";marksShape=null;
+        for(int i=0;i<9;i++) view.node("layer_"+i).ifPresent(n -> {rest(n);n.setTint(0xFFFFFFFF);n.setVisible(false);});
+        view.node("dish").ifPresent(n -> {rest(n);n.setTint(0xFFFFFFFF);n.setVisible(false);});
+        view.node("food").ifPresent(n -> {rest(n);n.setVisible(false);});
+        view.node("marks").ifPresent(n -> n.setVisible(false));
+    }
+    private static void rest(NodeView n){n.scaleTo(1,0);n.moveTo(0,0,0,0);n.rotateTo(0,0,0,0);}
     private static void display(NodeView node,ItemStack stack,float size){
         if(stack.isEmpty()){node.setVisible(false);return;}
         node.setTint(0xFFFFFFFF);
@@ -224,6 +244,7 @@ final class BoardBehavior implements StationBehavior {
             var stack=i<layers.size()?layers.get(i):ItemStack.EMPTY;
             if(stack.isEmpty()){node.get().setVisible(false);continue;}
             display(node.get(),stack,8);
+            node.get().rotateTo(0,ContentFacing.yaw(view),0,0);
             final int index=i;
             after(.04F*i,() -> {
                 float hop=switch(finish){
@@ -263,6 +284,12 @@ final class BoardBehavior implements StationBehavior {
         after(.78F,() -> {
             view.node("dish").ifPresent(n -> {n.setVisible(true);n.scaleTo(1,.18F);n.hopTo(0,1.2F,0,2F,.22F);});
         });
-        after(1.45F,() -> view.node("dish").ifPresent(n -> n.setVisible(false)));
+        after(1.45F,() -> {
+            // Completion is also the cancel point for a close/reopen: every animated node goes back to
+            // its static transform, and the cached meshes are rebuilt from the state next frame.
+            view.node("dish").ifPresent(n -> n.setVisible(false));
+            reset(view);
+            assembling=0;
+        });
     }
 }

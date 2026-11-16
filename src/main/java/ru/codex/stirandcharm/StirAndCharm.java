@@ -24,7 +24,9 @@ public final class StirAndCharm {
         container.registerConfig(ModConfig.Type.COMMON, Settings.SPEC);
         Diegesis.register(station(POT, "cooking_pot", 6, false));
         Diegesis.register(station(BOWL, "crafting_bowl", 4, true));
-        for (var kind : Appliance.values()) Diegesis.register(appliance(kind));
+        for (var kind : Appliance.values()) {
+            if (kind != Appliance.MINCER) Diegesis.register(appliance(kind));
+        }
         Diegesis.register(Diegesis.station(BOARD)
             .block(() -> BuiltInRegistries.BLOCK.get(ResourceLocation.parse("farm_and_charm:cutting_board")))
             .schema(StationSchema.builder()

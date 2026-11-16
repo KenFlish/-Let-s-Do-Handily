@@ -164,10 +164,13 @@ public final class BoardLogic implements StationLogic {
 
         if (board.isCutting()) {
             var base = board.getPending();
-            if (base.getCount() == 1 && !ItemStack.isSameItemSameComponents(base, s)
+            if (!ItemStack.isSameItemSameComponents(base, s)
                 && BoardAssembly.fits(level, List.of(base.copyWithCount(1), s.copyWithCount(1)))) {
+                int n = Math.min(base.getCount(), BATCH);
+                var first = base.copyWithCount(n);
+                if (base.getCount() > n) give(p, base.copyWithCount(base.getCount() - n));
                 board.startCut(ItemStack.EMPTY);
-                contents(List.of(base.copyWithCount(1)));
+                contents(List.of(first));
                 layers = layers();
             } else if (ItemStack.isSameItemSameComponents(base, s)) {
                 int n = Math.min(one ? 1 : s.getCount(), BATCH - base.getCount());
@@ -191,8 +194,11 @@ public final class BoardLogic implements StationLogic {
             int n = Math.min(one ? 1 : s.getCount(), Math.max(1, batch));
             if (n <= 0) return;
             if (board.hasKnife()) give(p, board.takeKnife());
-            s.shrink(n); consumed(p, from, s);
-            board.addItem(s.copyWithCount(n));
+            // Split before the source can become empty: copyWithCount(0) is an empty stack, and the
+            // native board saves its item list without rejecting empty entries.
+            ItemStack placed = s.split(n);
+            consumed(p, from, s);
+            board.addItem(placed);
             sound(c, SoundEvents.ITEM_PICKUP, 1.1F);
             finishIfWanted(c, p);
             return;
@@ -210,8 +216,9 @@ public final class BoardLogic implements StationLogic {
         if (BoardAssembly.isBase(level, s)) {
             if (board.hasKnife()) give(p, board.takeKnife());
             int n = Math.min(one ? 1 : s.getCount(), BATCH);
-            s.shrink(n); consumed(p, from, s);
-            board.addItem(s.copyWithCount(n));
+            ItemStack placed = s.split(n);
+            consumed(p, from, s);
+            board.addItem(placed);
             sound(c, SoundEvents.ITEM_PICKUP, 1.1F);
             finishIfWanted(c, p);
             return;
@@ -236,11 +243,9 @@ public final class BoardLogic implements StationLogic {
             for (int i = items.size() - 1; i >= 0; i--) {
                 var stack = items.get(i);
                 if (stack.isEmpty()) continue;
-                ItemStack one = stack.copyWithCount(1);
-                stack.shrink(1);
-                if (stack.isEmpty()) items.remove(i);
+                items.remove(i);
                 contents(items);
-                give(p, one);
+                give(p, stack.copy());
                 sound(c, SoundEvents.ITEM_PICKUP, .85F);
                 return;
             }
@@ -302,7 +307,8 @@ public final class BoardLogic implements StationLogic {
         int done = 0;
         CAPTURE.set(c);
         try {
-            while (done < BATCH && board.isCutting() && room(c, outputs(recipe.get().value()))) {
+            while (done < BATCH && board.isCutting() && !board.getKnife().isEmpty()
+                && room(c, outputs(recipe.get().value()))) {
                 ((ChopState) board).handily$pendingChops(Math.max(0, required - 1));
                 board.chopPending(c.level());
                 done++;

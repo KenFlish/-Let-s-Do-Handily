@@ -9,7 +9,7 @@ public final class Settings {
         var b = new ModConfigSpec.Builder();
         POT = b.comment("Enable the cooking pot station; false uses Farm & Charm's normal interaction.").define("cooking_pot", true);
         BOWL = b.comment("Enable the crafting bowl station.").define("crafting_bowl", true);
-        MINCER = b.define("mincer", true);
+        MINCER = b.comment("Reserved legacy setting. The mincer always uses its native interaction in 0.6.1.").define("mincer", false);
         STOVE = b.define("stove", true);
         ROASTER = b.define("roaster", true);
         BOARD = b.define("cutting_board", true);
