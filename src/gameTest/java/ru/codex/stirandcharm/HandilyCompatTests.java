@@ -40,6 +40,34 @@ public final class HandilyCompatTests {
         return new Context(h.getLevel(),h.absolutePos(pos),type,new StationState(type.schema()));
     }
     private static CompoundTag fill(RecipeHolder<?> h) {var t=new CompoundTag();t.putString("recipe",h.id().toString());return t;}
+    @GameTest(template="empty") public static void cookbookTabAndStaleSelectionCannotTurnCuttingIntoAssembly(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:cutting_board","cutting_board");var logic=new BoardLogic(c);
+        var board=(CuttingBoardBlockEntity)c.blockEntity();var p=h.makeMockPlayer(GameType.SURVIVAL);
+        var raw=BoardRecipes.all(c.level()).stream().filter(r->r.value() instanceof CuttingBoardRecipe)
+            .flatMap(r->java.util.Arrays.stream(((CuttingBoardRecipe)r.value()).getIngredient().getItems()))
+            .filter(s->!BoardTools.canStick(s) && BoardAssembly.fits(c.level(),List.of(s.copyWithCount(1)))).findFirst().orElseThrow();
+        var state=c.state().data();state.putBoolean("assembly_mode",true);c.state().setData(state);
+        ((BoardSelection)board).handily$recipe(BoardAssembly.all(c.level()).getFirst().holder().id());
+        p.inventoryMenu.setCarried(raw.copyWithCount(3));logic.onCustomAction(c,p,"place",new CompoundTag());
+        h.assertTrue(board.isCutting() && board.getPending().getCount()==3 && board.getItems().isEmpty(),"A dual-purpose first ingredient is always cut despite a remembered dishes tab");
+        h.assertTrue(((BoardSelection)board).handily$recipe()==null,"Starting fresh cutting clears an obsolete dish selection");h.succeed();
+    }
+    @GameTest(template="empty") public static void secondMatchingIngredientConvertsCuttingIntoLayers(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:cutting_board","cutting_board");var logic=new BoardLogic(c);
+        var board=(CuttingBoardBlockEntity)c.blockEntity();var p=h.makeMockPlayer(GameType.SURVIVAL);
+        ItemStack first=ItemStack.EMPTY,second=ItemStack.EMPTY;
+        outer:for(var dish:BoardAssembly.all(c.level()))for(var a:dish.ingredients())for(var raw:a.getItems()){
+            if(BoardRecipes.cut(c.level(),raw).isEmpty() || BoardTools.canStick(raw))continue;
+            for(var b:dish.ingredients())for(var next:b.getItems())if(!ItemStack.isSameItemSameComponents(raw,next) && !BoardTools.canStick(next)
+                && BoardAssembly.fits(c.level(),List.of(raw.copyWithCount(1),next.copyWithCount(1)))){first=raw;second=next;break outer;}
+        }
+        h.assertTrue(!first.isEmpty(),"A native dish has a cuttable first ingredient and matching next layer");
+        p.inventoryMenu.setCarried(first.copyWithCount(2));logic.onCustomAction(c,p,"place",new CompoundTag());
+        h.assertTrue(board.isCutting(),"First ingredient starts under the knife");
+        p.inventoryMenu.setCarried(second.copyWithCount(2));logic.onCustomAction(c,p,"place",new CompoundTag());
+        h.assertTrue(!board.isCutting(),"Adding a matching second ingredient starts assembly, not a tab switch");
+        h.assertTrue(board.getItems().size()>=2 || !p.getInventory().isEmpty(),"The layers remain or form their native completed dish");h.succeed();
+    }
     @GameTest(template="empty",timeoutTicks=160)
     public static void candlelightPanSurvivesNativeTicks(GameTestHelper h) {
         if(!net.neoforged.fml.ModList.get().isLoaded("candlelight")){h.succeed();return;}

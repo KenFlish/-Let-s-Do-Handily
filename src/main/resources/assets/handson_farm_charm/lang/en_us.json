@@ -41,5 +41,7 @@
   "handson_farm_charm.prev": "Previous page",
   "handson_farm_charm.pot_contents": "Add ingredients. Click food to take it; right-click the soup with an empty cursor to recover a poured ingredient.",
   "handson_farm_charm.whisk": "Hold or click the whisk and move the mouse in circles",
-  "handson_farm_charm.serving": "Click: serve one into inventory. Shift: serve a batch. A matching vessel is required."
+  "handson_farm_charm.serving": "Click: serve one into inventory. Shift: serve a batch. A matching vessel is required.",
+  "handson_farm_charm.board.progress": "Progress: %s%%",
+  "handson_farm_charm.board.ready": "Ready"
 }

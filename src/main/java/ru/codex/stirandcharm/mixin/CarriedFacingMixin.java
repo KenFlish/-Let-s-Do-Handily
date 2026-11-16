@@ -14,7 +14,9 @@ import ru.codex.stirandcharm.client.HandilyCamera;
  */
 @Mixin(SceneRenderer.class)
 public abstract class CarriedFacingMixin {
-    @ModifyConstant(method = "lambda$renderCarried$20(Lcom/mojang/blaze3d/vertex/PoseStack;Lorg/joml/Vector3fc;Lorg/joml/Vector3fc;ZF)V",
+    @ModifyConstant(method = {
+        "lambda$renderCarried$20(Lcom/mojang/blaze3d/vertex/PoseStack;Lorg/joml/Vector3fc;Lorg/joml/Vector3fc;ZF)V",
+        "lambda$renderCarried$21(Lcom/mojang/blaze3d/vertex/PoseStack;Lorg/joml/Vector3fc;Lorg/joml/Vector3fc;ZF)V"},
         constant = @Constant(floatValue = 180.0F), remap = false)
     private static float handily$faceCamera(float original) {
         var station = FocusController.get().station();

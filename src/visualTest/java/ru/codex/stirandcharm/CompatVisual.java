@@ -37,6 +37,7 @@ public final class CompatVisual {
     @SubscribeEvent public static void tick(ClientTickEvent.Post e){
         if(!Boolean.getBoolean("handily.compatVisual"))return;
         if(Boolean.getBoolean("handily.boardMatrix"))return;
+        if(Boolean.getBoolean("handily.regressionVisual"))return;
         var mc=Minecraft.getInstance();if(mc.level==null || mc.player==null || mc.getSingleplayerServer()==null)return;
         ticks++;
         if(ticks==70 && Boolean.getBoolean("handily.potVisualOnly"))ticks=1234;

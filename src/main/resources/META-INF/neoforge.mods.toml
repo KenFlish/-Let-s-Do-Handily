@@ -33,7 +33,7 @@ side="BOTH"
 [[dependencies.handson_farm_charm]]
 modId="diegesis"
 type="required"
-versionRange="[1.0.0-beta.8]"
+versionRange="[1.0.0-beta.8,1.0.0-beta.12)"
 ordering="AFTER"
 side="BOTH"
 

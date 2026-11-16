@@ -19,5 +19,11 @@
     "directory": "compat",
     "url": "https://cdn.modrinth.com/data/oNB5jhlA/versions/4pEnkp1M/letsdo-bakery-neoforge-2.1.11.jar",
     "sha256": "7cf41c0fad07939f47b67550029a5335da4ca761ef567c50ced888240063d474"
+  },
+  {
+    "filename": "diegesis-neoforge-1.21.1-1.0.0-beta.11.jar",
+    "directory": "checks",
+    "url": "https://edge.forgecdn.net/files/9643/620/diegesis-neoforge-1.21.1-1.0.0-beta.11.jar",
+    "sha256": "42d158ac49035f081ffc1f12c89f081b430c14a1727882067c72c399026957f4"
   }
 ]

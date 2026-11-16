@@ -1,4 +1,14 @@
-# [Let's Do] Handily 0.6.3
+# [Let's Do] Handily 0.6.4
+
+- Cuttable first ingredients always start cutting, as in Hands-On Delight. A matching second ingredient starts assembly; cookbook tabs only filter recipes. Stale dish selections no longer override cutting.
+- Restored a non-clickable dish preview and progress badge beside stations, including board assembly.
+- Removed hover instructions for stirring and serving; the Bakery discard warning remains on its handle.
+- Inventory gains wait visually for the cut/assembly/serving animation, then fly into their slots. Ownership and capacity checks remain server-authoritative. Applied to board results/returns, pots, bowls, roasters, Candlelight pans and Bakery jars.
+- Fixed the carried-renderer injection for Diegesis beta.11 and expanded the dependency range through beta.11. beta.8 remains supported.
+- Added an opt-in background verification launch that hides its window and blocks physical mouse capture.
+- Cooking times and recipe balance are unchanged.
+
+## 0.6.3
 
 - Ported Hands-On Delight's pouring, dry-ingredient shaking, egg cracking and serving motions under MIT, adapted to native Let's Do models and inventories.
 - Fixed duplicate flat cursors while a board knife is drawn. Cutting uses the food's transform and a thin work-surface hitbox, including side cameras.

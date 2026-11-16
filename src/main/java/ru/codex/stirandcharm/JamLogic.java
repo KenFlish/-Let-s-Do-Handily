@@ -98,6 +98,7 @@ public final class JamLogic implements StationLogic {
         if(consume && from>=0)planned[from].shrink(1);
         if(!InventoryDelivery.insert(planned,preview(pot))){p.displayClientMessage(Component.translatable("handson_farm_charm.serving_failed"),true);return false;}
         var jam=pot.bottle();if(jam.isEmpty())return false;
+        DeliveryPresentation.before(c,p,List.of(jam),.78F);
         if(consume && from==-1){jar.shrink(1);p.inventoryMenu.setCarried(jar.isEmpty()?ItemStack.EMPTY:jar);}
         InventoryDelivery.commit(p,planned);ServingEffects.served(c,jam,new ItemStack(net.satisfy.bakery.core.registry.ObjectRegistry.JAR.get()));return true;
     }

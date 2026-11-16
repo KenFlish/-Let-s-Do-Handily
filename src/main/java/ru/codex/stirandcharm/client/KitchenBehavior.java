@@ -19,7 +19,7 @@ public final class KitchenBehavior implements StationBehavior {
     private final PotMotion potMotion = new PotMotion();
     private long start, lastSent = Long.MIN_VALUE;
     public KitchenBehavior(boolean bowl) { this.bowl = bowl;serving=new ServingGesture("collect",bowl?8:7.25F); book = new RecipeBook(new FarmCookbook(bowl)); }
-    public void onEffect(StationView view,net.minecraft.resources.ResourceLocation id,String node,CompoundTag tag){serving.effect(view,id,tag);}
+    public void onEffect(StationView view,net.minecraft.resources.ResourceLocation id,String node,CompoundTag tag){ClientDelivery.effect(view,id,tag);serving.effect(view,id,tag);}
     @Override public void onSceneReady(StationView view) {
         view.node("book_open").ifPresent(n -> n.setPainter(book));
         result = new ResultBadge(view, bowl);
@@ -52,10 +52,11 @@ public final class KitchenBehavior implements StationBehavior {
         }
     }
     @Override public void frame(StationView view, float delta) {
+        ClientDelivery.frame(view,delta);
         view.setCarriedHidden(false);
         view.node("stir_handle").ifPresent(n->n.setEnabled(view.isFocused()));
         view.node("mouth").ifPresent(n->n.setEnabled(view.isFocused()));
-        view.node("result").ifPresent(n -> { n.setVisible(false); n.setEnabled(false); });
+        view.node("result").ifPresent(n -> { n.setVisible(view.isFocused() && result!=null && result.hasMeal()); n.setEnabled(false); });
         if (!bowl) {
             view.node("pot_body").ifPresent(n -> n.setVisible(view.isInUse()));
             boolean poured=java.util.Arrays.stream(view.state().getItems("ingredients")).anyMatch(KitchenIngredients::liquid);

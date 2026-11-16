@@ -46,12 +46,10 @@ def modernize_scene(path, scene):
         for node in nodes:
             if node['id'].startswith('result_') or node['id'] == 'dump':
                 continue
-            if node['id'] == 'result' and kind != 'stove':
-                continue
             if 'children' in node:
                 node['children'] = clean(node['children'])
-            if kind == 'crafting_bowl' and node['id'] == 'stir_handle':
-                node['tooltip'] = 'handson_farm_charm.whisk'
+            if node['id'] == 'stir_handle':
+                node.pop('tooltip', None)
             if kind == 'cutting_board' and node['id'] == 'surface':
                 node['collider'] = {'from':[1,1.06,3], 'to':[11,1.14,13]}
             result.append(node)
@@ -59,12 +57,15 @@ def modernize_scene(path, scene):
     scene['nodes'] = clean(scene['nodes'])
     if kind == 'stove':
         return
+    try:
+        find_node(scene, 'result')['pickable'] = False
+    except KeyError:
+        find_node(scene, 'approach_ui').setdefault('children', []).append({'id':'result','pos':[-9,16,-9],'rotation':[-50,0,0],'pickable':False})
     height = {'cutting_board': 2.5, 'cooking_pot': 7.6, 'candlelight_pot': 9.2,
               'crafting_bowl': 8, 'roaster': 4.2, 'candlelight_pan': 3.3, 'jam_pot': 7.1}[kind]
     scene['nodes'] = [n for n in scene['nodes'] if n['id'] not in ('serve_area','offer_vessel','arrival','recover_preview','dump_handle','cooked_food') and not n['id'].startswith(('hand_','spill_'))]
     scene['nodes'] += [
-        {'id':'serve_area', 'collider':{'from':[4,height,4], 'to':[12,height+.12,12]},
-         'tooltip':'handson_farm_charm.serving'},
+        {'id':'serve_area', 'collider':{'from':[4,height,4], 'to':[12,height+.12,12]}},
         {'id':'offer_vessel','pos':[8,8,8],'pickable':False,'hidden':True},
         {'id':'arrival','pos':[8,8,8],'pickable':False,'hidden':True},
         {'id':'recover_preview','pos':[8,8,8],'pickable':False,'hidden':True},
@@ -238,6 +239,7 @@ en = {
     'board.knife': 'Place a knife here to chop; remove it to assemble dishes',
     'lid': 'Click the lid to open or close. Cooking requires a closed lid',
     'close_lid': 'Close the lid to cook',
+    'board.progress': 'Progress: %s%%', 'board.ready': 'Ready',
     'badge.batch': '%s ready · next: %s%%',
     'crank': 'Take the crank and turn the mouse in circles',
     'mincing': 'Grinding: %s%%', 'fuel': 'Fuel',
@@ -273,6 +275,7 @@ ru = {
     'board.knife': 'Положите нож для нарезки; уберите его для сборки блюда',
     'lid': 'Нажмите на крышку, чтобы открыть или закрыть. Готовит с закрытой крышкой',
     'close_lid': 'Закройте крышку для готовки',
+    'board.progress': 'Готовность: %s%%', 'board.ready': 'Готово',
     'badge.batch': 'Готово: %s · следующая: %s%%',
     'crank': 'Возьмитесь за ручку и вращайте мышь по кругу',
     'mincing': 'Измельчение: %s%%', 'fuel': 'Топливо',

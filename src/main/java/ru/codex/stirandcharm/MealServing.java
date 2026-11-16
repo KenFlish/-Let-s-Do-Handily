@@ -112,6 +112,9 @@ public final class MealServing {
      * accounts for a consumed inventory vessel freeing its slot; the last cursor vessel stays empty.
      */
     public static int collect(Player player, Container c, boolean one, boolean shift) {
+        return collect(player,c,one,shift,stack->{});
+    }
+    public static int collect(Player player,Container c,boolean one,boolean shift,java.util.function.Consumer<ItemStack> beforeDelivery){
         if (!(c instanceof MealVessel vesselData)) return 0;
         int count=0;
         do {
@@ -129,6 +132,7 @@ public final class MealServing {
                 if(source>=0)planned[source].shrink(1);
             }
             if(!InventoryDelivery.insert(planned,food.copyWithCount(1)))break;
+            beforeDelivery.accept(food.copyWithCount(1));
             if(pay && source==-1){held.shrink(1);player.inventoryMenu.setCarried(held.isEmpty()?ItemStack.EMPTY:held);}
             if(pay && source==-2){var stack=c.getItem(6);stack.shrink(1);c.setItem(6,stack.isEmpty()?ItemStack.EMPTY:stack);}
             food.shrink(1);c.setItem(7,food.isEmpty()?ItemStack.EMPTY:food);

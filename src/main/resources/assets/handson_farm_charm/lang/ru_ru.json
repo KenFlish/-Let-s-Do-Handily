@@ -41,5 +41,7 @@
   "handson_farm_charm.next": "Следующая страница",
   "handson_farm_charm.prev": "Предыдущая страница",
   "handson_farm_charm.whisk": "Удерживайте или возьмите венчик щелчком и двигайте мышь по кругу",
-  "handson_farm_charm.serving": "Щелчок: порция в инвентарь. Shift: партия. Нужна подходящая посуда."
+  "handson_farm_charm.serving": "Щелчок: порция в инвентарь. Shift: партия. Нужна подходящая посуда.",
+  "handson_farm_charm.board.progress": "Готовность: %s%%",
+  "handson_farm_charm.board.ready": "Готово"
 }

@@ -1,3 +1,43 @@
+# Handily 0.6.4 release verification
+
+Minecraft 1.21.1, NeoForge 21.1.265, Java 21.0.7 on Windows. Farm & Charm 1.1.29 and Architectury 13.0.11. Tested Diegesis builds: beta.8 and beta.11.
+
+## Current server checks
+
+```text
+gradlew.bat runGameTestServer -PgameTests --offline --console=plain --no-watch-fs --no-problems-report
+gradlew.bat runGameTestServer -PgameTests -Pcompat -PnewDiegesis --offline --console=plain --no-watch-fs --no-problems-report
+```
+
+Both runs passed **43 required tests**. The core run uses Diegesis beta.8; the compatibility run uses beta.11, Candlelight 2.1.15, Bakery 2.1.11, HerbalBrews 1.1.4, Hands-On Delight 1.4.0 and Farmer's Delight 1.3.4. Optional integrations are skipped when absent.
+
+Two new regression tests verify that a remembered dishes tab/stale selection cannot turn a cuttable first ingredient into assembly, and that a matching second ingredient can convert the pending cut stack into layers. Existing tests cover native outputs, tool durability, batch quantities, storage migration, cheese-first salad, full inventories, vessel consumption, jar components, liquid recovery and serialized serving attempts.
+
+## Current background client checks
+
+```text
+gradlew.bat runClient -PvisualTests -PregressionVisual -PbackgroundClient -Pcompat -PnewDiegesis --offline --console=plain --no-watch-fs --no-problems-report
+```
+
+The targeted client run completed successfully on beta.11. It checked:
+
+- The test window had no keyboard focus and the physical mouse was not captured.
+- Actual cursor placement of a dual-purpose tomato stack began cutting despite a stale dish selection; the dish/progress badge became visible.
+- Mouse-driven cutting completed the batch. The server-owned result was visually hidden until the scene receipt, then appeared after the inventory flight.
+- A real click served the last inventory vessel at the pot and at the roaster. Each result stayed visually hidden during the scoop and appeared after its flight.
+
+Input uses Diegesis's forced virtual pointer and screen handlers. Early diagnostic drivers failed before the final run: one clicked before the camera/input had settled, one assumed a nonexistent board node, and one checked a badge before its first updated frame. The final driver waits for state/frame synchronization. The separate background launch disables NeoForge's early window for that development profile. Normal player launches do not enable the background property.
+
+The original 0.6.3 JAR rejected beta.11 because of its exact beta.8 dependency restriction. In 0.6.4 the dependency range and the changed carried-renderer injection are fixed. Versions beta.9 and beta.10 are admitted by the range but were not separately launched.
+
+Only the selected cutting/pot/roaster paths received this new mouse-driven visual check. Bowl, Candlelight and Bakery use the same inventory-presentation path and have server/resource checks; no exhaustive new visual tour of every recipe or a long multiplayer soak is claimed. The prior release's 32-case cutting matrix is historical evidence below, not a rerun on 0.6.4.
+
+The release archive excludes local worlds, raw logs, credentials and dependency JARs. A verification archive contains extracted pass/failure records. The runtime JAR excludes the visual/GameTest drivers and retains MIT notices. Cooking times and balance were not changed.
+
+---
+
+## Historical 0.6.3 checks
+
 # Handily 0.6.3 release verification
 
 Environment: Windows, Java 21.0.7, Minecraft 1.21.1, NeoForge 21.1.265.

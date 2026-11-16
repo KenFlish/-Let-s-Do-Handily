@@ -14,7 +14,7 @@ final class JamBehavior implements StationBehavior {
     private boolean stirring,pinned;
     private ResultBadge result;
     private long start,sent=Long.MIN_VALUE;
-    public void onEffect(StationView view,net.minecraft.resources.ResourceLocation id,String node,CompoundTag tag){serving.effect(view,id,tag);}
+    public void onEffect(StationView view,net.minecraft.resources.ResourceLocation id,String node,CompoundTag tag){ClientDelivery.effect(view,id,tag);serving.effect(view,id,tag);}
     public void onSceneReady(StationView view){view.node("book_open").ifPresent(n -> n.setPainter(book));result=new ResultBadge(view);view.node("result").ifPresent(n -> n.setPainter(result));view.node("dump_handle").ifPresent(n -> n.setPainter(new HandleOutline(view)));ApproachCamera.open(view);}
     public void onOpen(StationView view){view.setInventoryFilter(null);ApproachCamera.open(view);book.opened(view);}
     public void onClose(StationView view){stirring=false;pinned=false;book.shut(view);}
@@ -25,13 +25,14 @@ final class JamBehavior implements StationBehavior {
         }
     }
     public void frame(StationView view,float dt){
+        ClientDelivery.frame(view,dt);
         view.setCarriedHidden(false);
         view.node("stir_handle").ifPresent(n->n.setEnabled(view.isFocused()));
         view.node("mouth").ifPresent(n->n.setEnabled(view.isFocused()));
         var data=view.state().data();
         view.node("result").ifPresent(n -> {
             ItemStack out=data.contains("meal")?ItemStack.parseOptional(view.level().registryAccess(),data.getCompound("meal")):ItemStack.EMPTY;
-            n.setVisible(false);n.setEnabled(false);
+            n.setVisible(view.isFocused() && !out.isEmpty());n.setEnabled(false);
         });
         if(result!=null)result.refresh();
         view.node("dump_handle").ifPresent(n -> {n.setVisible(view.isFocused());n.setEnabled(view.isFocused());});

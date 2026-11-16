@@ -356,6 +356,20 @@
               3.9
             ]
           }
+        },
+        {
+          "id": "result",
+          "pos": [
+            -9,
+            16,
+            -9
+          ],
+          "rotation": [
+            -50,
+            0,
+            0
+          ],
+          "pickable": false
         }
       ]
     },
@@ -372,8 +386,7 @@
           3.42,
           12
         ]
-      },
-      "tooltip": "handson_farm_charm.serving"
+      }
     },
     {
       "id": "offer_vessel",

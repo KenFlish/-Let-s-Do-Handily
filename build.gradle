@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
     id 'net.neoforged.moddev' version '2.0.141'
 }
-version = '0.6.3'
+version = '0.6.4'
 group = 'ru.codex.stirandcharm'
 base { archivesName = 'handily-neoforge-1.21.1' }
 java { toolchain.languageVersion = JavaLanguageVersion.of(21); withSourcesJar() }
@@ -22,6 +22,8 @@ neoForge {
     runs {
         client {
             client(); gameDirectory = file(project.hasProperty('baseVisual') ? 'run-client-base' : 'run-client')
+            if (project.hasProperty('backgroundClient')) systemProperty 'handily.backgroundClient', 'true'
+            if (project.hasProperty('regressionVisual')) systemProperty 'handily.regressionVisual', 'true'
             if (project.hasProperty('boardMatrix')) systemProperty 'handily.boardMatrix', 'true'
             if (project.hasProperty('compatVisual')) systemProperty 'handily.compatVisual', 'true'
             if (project.hasProperty('potVisualOnly')) systemProperty 'handily.potVisualOnly', 'true'
@@ -45,7 +47,7 @@ neoForge {
 neoForge.addModdingDependenciesTo(sourceSets.gameTest)
 neoForge.addModdingDependenciesTo(sourceSets.visualTest)
 dependencies {
-    implementation files('libs/diegesis-neoforge-1.21.1-1.0.0-beta.8.jar')
+    implementation files(project.hasProperty('newDiegesis') ? 'libs/checks/diegesis-neoforge-1.21.1-1.0.0-beta.11.jar' : 'libs/diegesis-neoforge-1.21.1-1.0.0-beta.8.jar')
     implementation files('libs/letsdo-farm_and_charm-neoforge-1.1.29.jar')
     implementation files('libs/architectury-13.0.11-neoforge.jar')
     compileOnly files('libs/foundation-neoforge-1.0.7.jar')

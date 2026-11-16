@@ -97,11 +97,12 @@ public final class KitchenLogic implements StationLogic {
         } else if(action.equals("collect") && bowl){
             var be=(CraftingBowlBlockEntity)container;var out=container.getItem(4);
             if(be.canTakeOut(station.level()) && !out.isEmpty() && InventoryDelivery.fits(player,List.of(out.copy()))){
+                DeliveryPresentation.before(station,player,List.of(out.copy()),.78F);
                 var taken=container.removeItem(4,out.getCount());InventoryDelivery.give(player,List.of(taken));ServingEffects.served(station,taken,ItemStack.EMPTY);publish(station);
             }
         } else if (action.equals("collect") && !bowl) {
             var meal=container.getItem(7).copy();var vessel=((MealVessel)container).handily$vessel().copy();
-            int taken=MealServing.collect(player,container,data.getBoolean("one"),data.getBoolean("inventory"));
+            int taken=MealServing.collect(player,container,data.getBoolean("one"),data.getBoolean("inventory"),stack->DeliveryPresentation.before(station,player,List.of(stack),.78F));
             if(taken>0)ServingEffects.served(station,meal,vessel);
             if (taken>0 && station.level() instanceof ServerLevel level)
                 ((CookingPotBlockEntity)container).dropExperience(level,Vec3.atCenterOf(station.pos()));

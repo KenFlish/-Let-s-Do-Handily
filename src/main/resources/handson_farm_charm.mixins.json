@@ -3,7 +3,36 @@
   "minVersion": "0.8",
   "package": "ru.codex.stirandcharm.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": ["CookingPotAccess", "JamAccess", "RoasterAccess", "StoveAccess", "ServingInventory", "PotServing", "RoasterServing", "ServingMenu", "RoasterLidBlock", "RoasterCooking", "PotStirBoost", "BoardQueue", "BoardLegacyDrops", "BoardChops", "CookingTime", "RoastingTime"],
-  "client": ["SpriteImageAccess", "BoardSceneRenderer", "CameraSideMixin", "CarriedFacingMixin", "CarriedScaleMixin"],
-  "injectors": {"defaultRequire": 1}
+  "mixins": [
+    "CookingPotAccess",
+    "JamAccess",
+    "RoasterAccess",
+    "StoveAccess",
+    "ServingInventory",
+    "PotServing",
+    "RoasterServing",
+    "ServingMenu",
+    "RoasterLidBlock",
+    "RoasterCooking",
+    "PotStirBoost",
+    "BoardQueue",
+    "BoardLegacyDrops",
+    "BoardChops",
+    "CookingTime",
+    "RoastingTime"
+  ],
+  "client": [
+    "SpriteImageAccess",
+    "BoardSceneRenderer",
+    "CameraSideMixin",
+    "CarriedFacingMixin",
+    "CarriedScaleMixin",
+    "BackgroundWindowMixin",
+    "BackgroundMouseMixin",
+    "InventoryArrivalMixin",
+    "GainArrivalMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
 }

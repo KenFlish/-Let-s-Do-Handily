@@ -22,6 +22,7 @@ import ru.codex.stirandcharm.BoardAssembly.Made;
 public final class BoardLogic implements StationLogic {
     private static final ThreadLocal<StationContext> CAPTURE = new ThreadLocal<>();
     private static final ThreadLocal<Player> COOK = new ThreadLocal<>();
+    private static final ThreadLocal<List<ItemStack>> DELIVERED = new ThreadLocal<>();
     private static final int BATCH = 16;
     private static final int CHOP_GAP = 4;
 
@@ -36,7 +37,7 @@ public final class BoardLogic implements StationLogic {
             var ctx = CAPTURE.get();
             if (ctx == null || ctx.level() != level || !ctx.pos().equals(pos)) return stack;
             ItemStack left = stack.copy();
-            var cook=COOK.get();if(cook!=null){cook.getInventory().add(left);return left;}
+            var cook=COOK.get();if(cook!=null){DELIVERED.get().add(left);return ItemStack.EMPTY;}
             for (int pass = 0; pass < 2; pass++) for (int i = 0; i < 8 && !left.isEmpty(); i++) {
                 var ref = SlotRef.of("result", i);
                 var old = ctx.state().getItem(ref);
@@ -126,7 +127,6 @@ public final class BoardLogic implements StationLogic {
             case "take" -> take(ctx, player);
             case "chop" -> chop(ctx, player, data);
             case "assemble" -> assemble(ctx, player, data.getBoolean("all")?BATCH:1);
-            case "mode" -> {var tag=ctx.state().data();tag.putBoolean("assembly_mode",data.getBoolean("assembly"));ctx.state().setData(tag);}
             case "fill" -> fill(ctx, player, data);
             default -> {}
         }
@@ -151,6 +151,7 @@ public final class BoardLogic implements StationLogic {
     }
 
     private void give(Player p, ItemStack s) {
+        s=s.copy();
         while (!s.isEmpty()) {
             ItemStack part = s.split(s.getMaxStackSize());
             if (!p.getInventory().add(part)) p.drop(part, false);
@@ -227,10 +228,12 @@ public final class BoardLogic implements StationLogic {
             return;
         }
 
-        boolean assembling=c.state().data().getBoolean("assembly_mode") || ((BoardSelection)board).handily$recipe()!=null;
         boolean startAssembly=BoardAssembly.fits(level,List.of(s.copyWithCount(1)));
-        boolean cuttable = BoardRecipes.cut(level, s).isPresent() && !(assembling && startAssembly);
+        // Hands-On: a cuttable first ingredient always lies under the knife. A matching second
+        // ingredient above converts it into layers; browsing a cookbook tab never changes the action.
+        boolean cuttable = BoardRecipes.cut(level, s).isPresent();
         if (cuttable) {
+            ((BoardSelection)board).handily$recipe(null);
             if (board.hasKnife()) give(p, board.takeKnife());
             int n = Math.min(one ? 1 : s.getCount(), BATCH);
             board.startCut(s.split(n)); consumed(p, from, s);
@@ -239,6 +242,7 @@ public final class BoardLogic implements StationLogic {
             return;
         }
         if (startAssembly) {
+            ((BoardSelection)board).handily$recipe(null);
             if (board.hasKnife()) give(p, board.takeKnife());
             int n = Math.min(one ? 1 : s.getCount(), BATCH);
             ItemStack placed = s.split(n);
@@ -274,6 +278,7 @@ public final class BoardLogic implements StationLogic {
                 if(!InventoryDelivery.fits(p,List.of(stack))){refuse(c,stack);return;}
                 items.remove(i);
                 contents(items);
+                DeliveryPresentation.before(c,p,List.of(stack),.3F);
                 give(p, stack.copy());
                 received(c,stack);
                 sound(c, SoundEvents.ITEM_PICKUP, .85F);
@@ -284,6 +289,7 @@ public final class BoardLogic implements StationLogic {
             var s = board.getPending().copy();
             if(!InventoryDelivery.fits(p,List.of(s))){refuse(c,s);return;}
             board.startCut(ItemStack.EMPTY);
+            DeliveryPresentation.before(c,p,List.of(s),.3F);
             give(p, s);
             received(c,s);
             restart(c);
@@ -342,7 +348,8 @@ public final class BoardLogic implements StationLogic {
         // cut per item finishes the batch, without spending extra time on each item's marks.
         int required = CuttingBoardBlockEntity.requiredChops(tool.stack, recipe.get().value());
         int done = 0;
-        CAPTURE.set(c);COOK.set(p);
+        var delivered=new ArrayList<ItemStack>();
+        CAPTURE.set(c);COOK.set(p);DELIVERED.set(delivered);
         try {
             while (done < BATCH && board.isCutting() && !board.getKnife().isEmpty()
                 && InventoryDelivery.fits(p,outputs(recipe.get().value()))) {
@@ -352,6 +359,7 @@ public final class BoardLogic implements StationLogic {
             }
         } finally {
             CAPTURE.remove();COOK.remove();
+            DELIVERED.remove();
             if (tool.slot != -2) {
                 var used = board.takeKnife();
                 if (tool.slot == -1) p.inventoryMenu.setCarried(used);
@@ -360,6 +368,8 @@ public final class BoardLogic implements StationLogic {
             }
         }
         if (done == 0) { refuse(c, ItemStack.EMPTY); restart(c); return; }
+        DeliveryPresentation.before(c,p,delivered,.3F);
+        InventoryDelivery.give(p,delivered);
         var tag = new CompoundTag();
         tag.putInt("mark", plan.marks());
         tag.putFloat("spot", spot);
@@ -403,6 +413,7 @@ public final class BoardLogic implements StationLogic {
         var delivered=new ArrayList<ItemStack>();delivered.addAll(made.dishes());delivered.addAll(made.leftovers());delivered.addAll(made.remaining());
         for(var out:delivered)if(!InventoryDelivery.insert(planned,out)){refuse(c,ItemStack.EMPTY);return;}
         if(vesselSlot==-1){var held=p.inventoryMenu.getCarried();held.shrink(made.rounds());p.inventoryMenu.setCarried(held.isEmpty()?ItemStack.EMPTY:held);}
+        DeliveryPresentation.before(c,p,delivered,1.45F);
         contents(List.of());InventoryDelivery.commit(p,planned);
         for(var result:made.dishes())result.onCraftedBy(c.level(),p,result.getCount());
         var tag = new CompoundTag();

@@ -32,8 +32,9 @@ final class BoardBehavior implements StationBehavior {
     private final List<Step> steps=new ArrayList<>();
     private float clock,assembling,partAge=1;
     private ItemStack assemblyDish=ItemStack.EMPTY;
+    private ResultBadge result;
     private record Step(float at,Runnable run){}
-    public void onSceneReady(StationView view) {view.node("book_open").ifPresent(n -> n.setPainter(book));view.node("dish").ifPresent(n -> n.setVisible(false));clock=0;steps.clear();assembling=0;reset(view);ApproachCamera.open(view);}
+    public void onSceneReady(StationView view) {view.node("book_open").ifPresent(n -> n.setPainter(book));result=new ResultBadge(view,false);view.node("result").ifPresent(n->n.setPainter(result));view.node("dish").ifPresent(n -> n.setVisible(false));clock=0;steps.clear();assembling=0;reset(view);ApproachCamera.open(view);}
     public void onOpen(StationView view) {
         view.setInventoryFilter(null);ApproachCamera.open(view);book.opened(view);
         reset(view);
@@ -43,8 +44,9 @@ final class BoardBehavior implements StationBehavior {
         }
     }
     public void onClose(StationView view) {book.shut(view);steps.clear();assembling=0;reset(view);}
-    public void onStateChanged(StationView view,StationState.Changes changes){book.invalidate();if(assembling<=0)reset(view);}
+    public void onStateChanged(StationView view,StationState.Changes changes){book.invalidate();if(result!=null)result.refresh();if(assembling<=0)reset(view);}
     @Override public void onEffect(StationView view,net.minecraft.resources.ResourceLocation effect,String node,CompoundTag data){
+        ClientDelivery.effect(view,effect,data);
         if(effect.equals(StirAndCharm.id("chopped")))partAge=0;
         if(effect.equals(StirAndCharm.id("placed"))){
             int index=data.getInt("index");var from=view.cursorOn(9).orElse(new Vector3f(6,9,8));
@@ -69,6 +71,8 @@ final class BoardBehavior implements StationBehavior {
         if(inv!=invStamp||carried!=carriedStamp){invStamp=inv;carriedStamp=carried;book.invalidate();}
     }
     public void frame(StationView view,float dt) {
+        ClientDelivery.frame(view,dt);
+        view.node("result").ifPresent(n->{n.setVisible(view.isFocused() && result!=null && result.hasMeal() && assembling<=0);n.setEnabled(false);});
         clock+=dt;
         if(!steps.isEmpty()){
             var due=steps.stream().filter(step -> step.at()<=clock).toList();

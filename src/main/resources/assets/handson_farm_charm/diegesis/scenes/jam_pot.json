@@ -136,8 +136,7 @@
           16,
           10.5
         ]
-      },
-      "tooltip": "handson_farm_charm.jam.stir"
+      }
     },
     {
       "id": "approach_ui",
@@ -174,6 +173,20 @@
               3.9
             ]
           }
+        },
+        {
+          "id": "result",
+          "pos": [
+            -9,
+            16,
+            -9
+          ],
+          "rotation": [
+            -50,
+            0,
+            0
+          ],
+          "pickable": false
         }
       ]
     },
@@ -190,8 +203,7 @@
           7.22,
           12
         ]
-      },
-      "tooltip": "handson_farm_charm.serving"
+      }
     },
     {
       "id": "offer_vessel",

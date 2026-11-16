@@ -79,7 +79,7 @@ public final class ApplianceLogic implements StationLogic {
         } else if (kind == Appliance.ROASTER && action.equals("collect")) {
             if(!accessible(ctx))return;
             var meal=container.getItem(7).copy();var vessel=((MealVessel)container).handily$vessel().copy();
-            int taken=MealServing.collect(player,container,data.getBoolean("one"),data.getBoolean("inventory"));
+            int taken=MealServing.collect(player,container,data.getBoolean("one"),data.getBoolean("inventory"),stack->DeliveryPresentation.before(ctx,player,List.of(stack),.78F));
             if(taken>0)ServingEffects.served(ctx,meal,vessel);
             if (taken>0 && ctx.level() instanceof ServerLevel level)
                 ((RoasterBlockEntity)container).dropExperience(level,Vec3.atCenterOf(ctx.pos()));

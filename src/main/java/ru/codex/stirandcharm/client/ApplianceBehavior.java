@@ -16,7 +16,7 @@ final class ApplianceBehavior implements StationBehavior {
     private float lidAngle;
     private long start, sent = Long.MIN_VALUE;
     ApplianceBehavior(Appliance kind) { this.kind = kind; source = new ApplianceCookbook(kind); book = new RecipeBook(source); }
-    public void onEffect(StationView view,net.minecraft.resources.ResourceLocation id,String node,CompoundTag tag){serving.effect(view,id,tag);}
+    public void onEffect(StationView view,net.minecraft.resources.ResourceLocation id,String node,CompoundTag tag){ClientDelivery.effect(view,id,tag);serving.effect(view,id,tag);}
     public void onSceneReady(StationView view) {
         view.node("book_open").ifPresent(n -> n.setPainter(book));
         result = new ResultBadge(view, kind, source);
@@ -42,8 +42,9 @@ final class ApplianceBehavior implements StationBehavior {
         }
     }
     public void frame(StationView view, float dt) {
+        ClientDelivery.frame(view,dt);
         view.setCarriedHidden(false);
-        view.node("result").ifPresent(n -> { n.setVisible(kind==Appliance.STOVE && view.isFocused()); n.setEnabled(kind==Appliance.STOVE && view.isFocused()); });
+        view.node("result").ifPresent(n -> { n.setVisible(view.isFocused() && result!=null && result.hasMeal()); n.setEnabled(kind==Appliance.STOVE && view.isFocused()); });
         view.node("fuel").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
         view.node("fire").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
         if(kind==Appliance.ROASTER)TrayFood.frame(view);

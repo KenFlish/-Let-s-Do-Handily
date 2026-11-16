@@ -28,6 +28,7 @@ public final class VisualCheck {
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         if (Boolean.getBoolean("handily.compatVisual")) return;
         if(Boolean.getBoolean("handily.boardMatrix"))return;
+        if(Boolean.getBoolean("handily.regressionVisual"))return;
         var mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null || mc.getSingleplayerServer() == null) {
             if (++frames > 8000) mc.stop();

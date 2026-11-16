@@ -20,7 +20,6 @@ final class BoardCookbook implements RecipeBook.Source {
         return List.of(new RecipeBook.Tab(null,new ItemStack(Items.COMPASS)),new RecipeBook.Tab("dishes",new ItemStack(Items.BREAD)),
             new RecipeBook.Tab("knife",new ItemStack(item)),new RecipeBook.Tab("tools",new ItemStack(Items.IRON_AXE)));
     }
-    public void tabChanged(StationView view,String kind){var tag=new CompoundTag();tag.putBoolean("assembly","dishes".equals(kind));view.sendAction("mode",tag);}
     public String memory(){return StirAndCharm.BOARD.toString();}
     public List<ItemStack> inStation(StationView view) {
         var items=new ArrayList<>(List.of(view.state().getItems("ingredients")));

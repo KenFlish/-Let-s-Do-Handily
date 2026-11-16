@@ -21,12 +21,21 @@ final class ResultBadge implements NodePainter {
     private ItemStack shown = ItemStack.EMPTY;
     private boolean ready;
     private boolean jam;
+    boolean hasMeal(){return !shown.isEmpty();}
     ResultBadge(StationView view){this.view=view;this.bowl=false;this.jam=true;refresh();}
     ResultBadge(StationView view, boolean bowl) { this.view = view; this.bowl = bowl; refresh(); }
     ResultBadge(StationView view, Appliance kind, ApplianceCookbook source) {
         this.view = view; this.bowl = false; this.kind = kind; this.applianceSource = source; refresh();
     }
     void refresh() {
+        if(view.type().id().getPath().equals("cutting_board")){
+            var pending=view.state().getItems("pending")[0];
+            var layers=java.util.Arrays.stream(view.state().getItems("ingredients")).filter(s->!s.isEmpty()).toList();
+            shown=!pending.isEmpty()?BoardRecipes.cut(view.level(),pending).map(h->KitchenRecipes.result(view.level(),h.value())).orElse(ItemStack.EMPTY)
+                :BoardAssembly.all(view.level()).stream().filter(d->BoardAssembly.assign(d,layers,false)!=null).findFirst().map(d->KitchenRecipes.result(view.level(),d.holder().value())).orElse(ItemStack.EMPTY);
+            ready=view.state().data().getBoolean("finish_ready") || !view.state().data().getString("dish").isEmpty();
+            return;
+        }
         if(jam){
             var data=view.state().data();shown=data.contains("meal")?ItemStack.parseOptional(view.level().registryAccess(),data.getCompound("meal")):ItemStack.EMPTY;
             ready=view.state().getControl("ready")>.5F;
@@ -72,8 +81,15 @@ final class ResultBadge implements NodePainter {
             y += 10;
         }
         boolean batch=kind==Appliance.MINCER && !view.state().getItems("ingredients")[0].isEmpty();
+        boolean board=view.type().id().getPath().equals("cutting_board");
         int percent = ready && !batch && !jam ? 100 : Math.round(view.state().getControl("progress") * 100);
+        if(board && view.state().getItems("pending")[0].isEmpty()){
+            var layers=java.util.Arrays.stream(view.state().getItems("ingredients")).filter(s->!s.isEmpty()).toList();
+            var dish=BoardAssembly.all(view.level()).stream().filter(d->BoardAssembly.assign(d,layers,false)!=null).findFirst();
+            percent=dish.map(d->Math.round(100F*layers.size()/d.ingredients().size())).orElse(0);
+        }
         Component caption = jam ? jamCaption(percent)
+            :board ? Component.translatable(ready?"handson_farm_charm.board.ready":"handson_farm_charm.board.progress",percent)
             : ready && batch ? Component.translatable("handson_farm_charm.badge.batch",shown.getCount(),percent)
             : ready ? Component.translatable("handson_farm_charm.badge.ready", shown.getCount())
             : kind == Appliance.ROASTER && view.level().getBlockState(view.pos()).hasProperty(RoasterLid.OPEN) && view.state().getControl("lid_open") > 0 ? Component.translatable("handson_farm_charm.close_lid")
