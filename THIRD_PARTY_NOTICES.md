@@ -8,6 +8,8 @@ The cookbook renderer (`RecipeBook.java`, `RecipeBookModel.java`, `FlatLit.java`
 
 Station integration, transfer logic and motion validation are independently implemented. The pot's stirrer and the bowl's whisk use the installed Farm & Charm models. Hands-On Delight and Farmer's Delight are not runtime dependencies.
 
+Version 0.6.2 adapts the spoon-following, quaternion lean, inertial soup current and ingredient drift/separation algorithms from `PotBehavior.java` in Hands-On Delight by Pocky, commit `292fb1920eed9797551dade9027ebd97f70b65f7`, under the same MIT license. `PotMotion.java` adjusts the spoon pivot and rest axis to the installed Farm & Charm model and keeps all solid native ingredients visible and retrievable. Recipe quality, extra servings and HOD dependencies are not added.
+
 In version 0.2.0 the cover references Minecraft's enchanting-table book texture at runtime; that Minecraft texture is not redistributed. The original adapted paper texture remains in use. Roaster lid/body and mincer crank reference the installed Farm & Charm models and textures at runtime.
 
 Version 0.4.0 also adapts `ItemVoxels.java` from the same Hands-On Delight commit under its MIT license, for pixel-volume ingredients and separated cut pieces. Knife motion and dashed cut marks follow Hands-On Delight's board interaction design, using Farm & Charm's native recipes, chop thresholds, inventories, durability and byproducts. Hands-On Delight remains optional.

@@ -41,6 +41,7 @@ for bowl in [False, True]:
     if not bowl:
         nodes += [
             {'id': 'pot_body', 'pickable': False},
+            {'id': 'contents', 'collider': {'from': [4.05, 7.15, 4.05], 'to': [11.95, 7.35, 11.95]}, 'tooltip': 'handson_farm_charm.pot_contents'},
             {'id': 'broth', 'pickable': False, 'tank': {'tank': 'broth', 'inner': {'from': [4.05, 2.05, 4.05], 'to': [11.95, 8.95, 11.95]}}},
             {'id': 'spoon', 'pos': [8, 0, 8], 'pickable': False, 'children': [
                 {'id': 'stir_handle', 'strokes': True, 'collider': {'from': [-8.5, 7.5, -1], 'to': [-2.5, 13, 3]},
@@ -157,6 +158,7 @@ for n in pot['nodes']:
     if n['id'] == 'broth': n['tank']['inner']['to'][1] = 10.95
     if n['id'].startswith('ingredient_'): n['pos'][1] += 2.5
     if n['id'] == 'mouth': n['collider'] = {'from': [4, 11, 4], 'to': [12, 12, 12]}
+    if n['id'] == 'contents': n['collider'] = {'from': [4.05, 8.65, 4.05], 'to': [11.95, 8.85, 11.95]}
     if n['id'] == 'spoon':
         n['children'][0]['collider'] = {'from': [-8.5, 10.5, -1], 'to': [-2.5, 16, 3]}
 write('diegesis/scenes/candlelight_pot.json', pot)
@@ -176,6 +178,7 @@ jam['nodes']=[deepcopy(find_node(scene,'book_open'))]+[
 jam['captions']={'edge':'top','background':'#70000000'}
 write('diegesis/scenes/jam_pot.json',approach(jam))
 en = {
+    'pot_contents': 'Add ingredients. Click food to take it; right-click the soup with an empty cursor to recover a poured ingredient.',
     'pot_lid': 'Open / close the lid',
     'board.book_all': 'All recipes', 'board.book_tools': 'Axe work',
     'jam.stir': 'Stir with circular mouse movements',
@@ -208,6 +211,7 @@ en = {
     'next': 'Next page', 'prev': 'Previous page',
 }
 ru = {
+    'pot_contents': 'Добавьте ингредиенты. Щелчок по продукту: забрать. ПКМ по супу с пустым курсором: вернуть налитый ингредиент.',
     'pot_lid': 'Открыть / закрыть крышку',
     'board.book_all': 'Все рецепты', 'board.book_tools': 'Работа топором',
     'jam.stir': 'Вращайте венчик мышью',

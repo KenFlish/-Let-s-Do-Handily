@@ -405,6 +405,22 @@
           }
         }
       ]
+    },
+    {
+      "id": "contents",
+      "collider": {
+        "from": [
+          4.05,
+          7.15,
+          4.05
+        ],
+        "to": [
+          11.95,
+          7.35,
+          11.95
+        ]
+      },
+      "tooltip": "handson_farm_charm.pot_contents"
     }
   ]
 }

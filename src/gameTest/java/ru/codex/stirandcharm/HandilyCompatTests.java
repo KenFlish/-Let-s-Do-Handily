@@ -476,6 +476,36 @@ public final class HandilyCompatTests {
         h.assertTrue(taken==1 && pot.getItem(7).getCount()==before-1,"Candlelight serving takes one native portion");
         h.succeed();
     }
+    @GameTest(template="empty") public static void potPowdersRemainRetrievable(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:cooking_pot","cooking_pot");var logic=new KitchenLogic(c,false);
+        var pot=(CookingPotBlockEntity)c.blockEntity();var p=h.makeMockPlayer(GameType.SURVIVAL);
+        pot.setItem(0,new ItemStack(Items.SUGAR,32));logic.onSlotChanged(c,SlotRef.of("ingredients",0));
+        h.assertTrue(logic.mayTake(c,p,SlotRef.of("ingredients",0)),"Sugar is a native retrievable ingredient");
+        h.assertTrue(c.state().getItems("ingredients")[0].getCount()==32,"Sugar remains bound to the real inventory");
+        var taken=pot.removeItem(0,32);
+        h.assertTrue(taken.is(Items.SUGAR) && taken.getCount()==32 && pot.getItem(0).isEmpty(),"Removing sugar returns the entire unchanged stack");
+        h.succeed();
+    }
+    @GameTest(template="empty") public static void potLiquidRecoveryIsAtomic(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:cooking_pot","cooking_pot");var logic=new KitchenLogic(c,false);
+        var pot=(CookingPotBlockEntity)c.blockEntity();var p=h.makeMockPlayer(GameType.SURVIVAL);
+        for(int i=0;i<36;i++)p.getInventory().setItem(i,new ItemStack(Items.STONE,64));
+        pot.setItem(0,new ItemStack(Items.SUGAR,12));pot.setItem(1,new ItemStack(Items.WATER_BUCKET));
+        logic.onCustomAction(c,p,"take_liquid",new CompoundTag());
+        h.assertTrue(pot.getItem(1).is(Items.WATER_BUCKET) && pot.getItem(0).getCount()==12,"Full inventory cannot lose a poured ingredient");
+        p.getInventory().setItem(0,ItemStack.EMPTY);logic.onCustomAction(c,p,"take_liquid",new CompoundTag());
+        h.assertTrue(p.getInventory().getItem(0).is(Items.WATER_BUCKET) && pot.getItem(1).isEmpty() && pot.getItem(0).getCount()==12,"Recovery returns the liquid container once and leaves visible sugar alone");
+        logic.onCustomAction(c,p,"take_liquid",new CompoundTag());
+        h.assertTrue(p.getInventory().getItem(0).getCount()==1,"Repeated recovery cannot duplicate the bucket");h.succeed();
+    }
+    @GameTest(template="empty",timeoutTicks=40) public static void potStirSignalExpiresAndRejectsInvalidMotion(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:cooking_pot","cooking_pot");var logic=new KitchenLogic(c,false);var p=h.makeMockPlayer(GameType.SURVIVAL);
+        var first=new CompoundTag();first.putFloat("x",2);first.putFloat("z",0);logic.onCustomAction(c,p,"stir",first);
+        h.runAtTickTime(2,()->{var next=new CompoundTag();next.putFloat("x",0);next.putFloat("z",2);logic.onCustomAction(c,p,"stir",next);logic.tick(c);
+            h.assertTrue(c.state().getControl("stirring")==1,"Valid motion publishes the stirring state");});
+        h.runAtTickTime(18,()->{var bad=new CompoundTag();bad.putFloat("x",Float.NaN);logic.onCustomAction(c,p,"stir",bad);logic.tick(c);
+            h.assertTrue(c.state().getControl("stirring")==0,"Stopped or invalid input cannot leave the spoon held forever");h.succeed();});
+    }
     @GameTest(template="empty") public static void potNativeTimingHeatAndServing(GameTestHelper h){
         var c=setup(h,"farm_and_charm:cooking_pot","cooking_pot");var pot=(CookingPotBlockEntity)c.blockEntity();
         var holder=KitchenRecipes.all(c.level(),false).stream().filter(r -> r.value() instanceof CookingPotRecipe p && !p.requiresLearning() && p.isContainerRequired()

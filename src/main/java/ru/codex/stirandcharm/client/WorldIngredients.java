@@ -28,7 +28,7 @@ public final class WorldIngredients {
                 WorldSoup.render(be,pose,buffers,light,ru.codex.stirandcharm.Broth.FARM_HEIGHT);
                 for (int i = 0; i < 6; i++) {
                     ItemStack stack = be.getItem(i);
-                    if (KitchenIngredients.liquid(stack) || KitchenIngredients.dissolved(stack) || KitchenIngredients.emptyContainer(stack)) continue;
+                    if (KitchenIngredients.liquid(stack) || KitchenIngredients.emptyContainer(stack)) continue;
                     float x = .32F + (i % 3) * .18F, z = i < 3 ? .35F : .65F;
                     item(be, stack, pose, buffers, light, overlay, x, 7.55F/16F, z, .19F, i * 31);
                 }
@@ -70,7 +70,7 @@ public final class WorldIngredients {
             {
                 WorldSoup.render(be,pose,buffers,light,ru.codex.stirandcharm.Broth.CANDLELIGHT_HEIGHT);
                 for(int i=0;i<6;i++){
-                    var stack=be.getItem(i);if(KitchenIngredients.liquid(stack) || KitchenIngredients.dissolved(stack) || KitchenIngredients.emptyContainer(stack))continue;
+                    var stack=be.getItem(i);if(KitchenIngredients.liquid(stack) || KitchenIngredients.emptyContainer(stack))continue;
                     item(be,stack,pose,buffers,light,overlay,.32F+i%3*.18F,9.05F/16F,i<3?.35F:.65F,.19F,i*31);
                 }
             }

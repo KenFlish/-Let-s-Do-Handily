@@ -22,6 +22,7 @@ public final class KitchenLogic implements StationLogic {
     private final Map<UUID, StirMotion> motion = new HashMap<>();
     private long lastImpulse = Long.MIN_VALUE;
     private ItemStack[] knownInputs;
+    private long lastStir = Long.MIN_VALUE;
 
     public KitchenLogic(StationContext station, boolean bowl) {
         this.bowl = bowl;
@@ -82,7 +83,7 @@ public final class KitchenLogic implements StationLogic {
             station.state().setControl("spoon_x", sample.x());
             station.state().setControl("spoon_z", sample.z());
             long now = station.level().getGameTime();
-            if (!bowl && sample.impulse() > 0) ((PotStirring)container).handily$stirred(now);
+            if (!bowl && sample.impulse() > 0) { ((PotStirring)container).handily$stirred(now); lastStir=now; }
             // Shared station cap: several cooks cannot multiply the native whisk impulse rate.
             if (bowl && sample.impulse() > 0 && (lastImpulse == Long.MIN_VALUE || now - lastImpulse >= 2)) {
                 CraftingBowlBlockEntity be = (CraftingBowlBlockEntity) container;
@@ -103,13 +104,14 @@ public final class KitchenLogic implements StationLogic {
         } else if (action.equals("take_liquid") && !bowl) {
             for (int i = 5; i >= 0; i--) {
                 ItemStack stack = container.getItem(i);
-                if (stack.isEmpty() || !KitchenIngredients.recoverablePour(stack)) continue;
+                if (stack.isEmpty() || !KitchenIngredients.liquid(stack)) continue;
                 ItemStack remainder = stack.copy();
                 player.getInventory().add(remainder);
                 container.setItem(i, remainder.isEmpty() ? ItemStack.EMPTY : remainder);
                 player.getInventory().setChanged();
                 player.inventoryMenu.broadcastChanges();
                 snapshot();
+                container.setChanged(); publish(station);
                 break;
             }
         } else if (action.equals("fill") && Settings.BOOK.get()) {
@@ -154,6 +156,7 @@ public final class KitchenLogic implements StationLogic {
             heated = ((CookingPotBlockEntity) container).isBeingBurned();
         }
         station.state().setControl("lid_open",!station.blockState().hasProperty(RoasterLid.OPEN) || station.blockState().getValue(RoasterLid.OPEN)?1:0);
+        station.state().setControl("stirring", lastStir!=Long.MIN_VALUE && station.level().getGameTime()-lastStir<12 ? 1 : 0);
         station.state().setControl("progress", progress);
         station.state().setControl("heated", heated ? 1 : 0);
         int broth = bowl ? 0 : Broth.amount(container);

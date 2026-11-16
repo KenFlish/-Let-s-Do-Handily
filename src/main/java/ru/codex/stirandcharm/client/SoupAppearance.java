@@ -70,7 +70,6 @@ final class SoupAppearance {
         current *= (float) Math.exp(-dt * 2);
         current = Math.clamp(current, -3F, 3F);
         view.node("broth").ifPresent(n -> {
-            n.setCurrent(current);
             n.setAgitation(heated ? .25F + Math.min(.3F, Math.abs(current) * .1F) : .02F);
             n.setEdgeBoil(heated ? .55F : 0);
         });

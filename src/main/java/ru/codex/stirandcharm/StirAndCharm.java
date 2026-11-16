@@ -62,6 +62,7 @@ public final class StirAndCharm {
             .control("progress", ControlSpec.range(0, 1, 0).locked())
             .control("heated", ControlSpec.toggle(false).locked())
             .control("lid_open",ControlSpec.toggle(true).locked())
+            .control("stirring", ControlSpec.toggle(false).locked())
             .control("spoon_x", ControlSpec.range(-3, 3, 0).locked())
             .control("spoon_z", ControlSpec.range(-3, 3, 0).locked())
             .tank("broth", TankSpec.of(100));

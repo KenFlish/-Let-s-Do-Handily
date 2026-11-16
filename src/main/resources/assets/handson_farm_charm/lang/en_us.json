@@ -38,5 +38,6 @@
   "handson_farm_charm.serve_with": "%s — serve with: %s",
   "handson_farm_charm.book.pot_time": "23–35 s",
   "handson_farm_charm.next": "Next page",
-  "handson_farm_charm.prev": "Previous page"
+  "handson_farm_charm.prev": "Previous page",
+  "handson_farm_charm.pot_contents": "Add ingredients. Click food to take it; right-click the soup with an empty cursor to recover a poured ingredient."
 }

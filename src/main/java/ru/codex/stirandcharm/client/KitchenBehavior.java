@@ -14,9 +14,7 @@ public final class KitchenBehavior implements StationBehavior {
     private ResultBadge result;
     private boolean stirring, pinned;
     private final HandMotion hand = new HandMotion();
-    private float foodAngle, spin, knownAngle;
-    private float spoonAngle, spoonTarget;
-    private boolean angleKnown;
+    private final PotMotion potMotion = new PotMotion();
     private long start, lastSent = Long.MIN_VALUE;
     public KitchenBehavior(boolean bowl) { this.bowl = bowl; book = new RecipeBook(new FarmCookbook(bowl)); }
     @Override public void onSceneReady(StationView view) {
@@ -26,6 +24,7 @@ public final class KitchenBehavior implements StationBehavior {
         if (!bowl) {
             view.node("pot_body").ifPresent(n -> n.setPainter(new PotBody(view, false)));
             view.node("spoon").ifPresent(n -> n.setPainter(new PotBody(view, true)));
+            view.node("contents").ifPresent(n -> n.setTooltip(Component.translatable("handson_farm_charm.pot_contents")));
         }
         apply(view);
         if (!bowl) ApproachCamera.open(view);
@@ -41,7 +40,8 @@ public final class KitchenBehavior implements StationBehavior {
         if (!stirring || !view.isFocused() || view.level().getGameTime() == lastSent) return;
         if (lastSent != Long.MIN_VALUE && view.level().getGameTime() - lastSent < 2) return;
         {
-            float[] point = hand.sample();
+            float[] point = bowl ? hand.sample() : PotMotion.point(view);
+            if (point == null) return;
             float x = point[0], z = point[1];
             CompoundTag data = new CompoundTag(); data.putFloat("x", x); data.putFloat("z", z);
             view.sendAction("stir", data);
@@ -53,29 +53,10 @@ public final class KitchenBehavior implements StationBehavior {
         view.node("result").ifPresent(n -> { n.setVisible(view.isFocused()); n.setEnabled(view.isFocused()); n.setOnTop(true); });
         if (!bowl) {
             view.node("pot_body").ifPresent(n -> n.setVisible(view.isInUse()));
-            float x = view.state().getControl("spoon_x"), z = view.state().getControl("spoon_z");
-            if (x*x+z*z > .1F) {
-                float a=(float)Math.atan2(z,x);
-                if (angleKnown) {
-                    float turn=(float)Math.atan2(Math.sin(a-knownAngle),Math.cos(a-knownAngle));
-                    if (Math.abs(turn)>.001F) { spin=Math.clamp(turn / Math.max(delta,.02F),-5F,5F); spoonTarget-=(float)Math.toDegrees(turn); }
-                }
-                angleKnown=true; knownAngle=a;
-            }
-            foodAngle += spin*delta; spin *= (float)Math.exp(-delta*3);
-            for (int i=0;i<6;i++) view.node("ingredient_"+i).ifPresent(n -> {
-                ContentFacing.turn(view, n);
-                var base=n.definition().transform().pos();
-                float bx=base.x()-8,bz=base.z()-8;
-                float radius=(float)Math.hypot(bx,bz); if (radius>3.4F) { bx*=3.4F/radius; bz*=3.4F/radius; }
-                float rx=(float)(bx*Math.cos(foodAngle)-bz*Math.sin(foodAngle));
-                float rz=(float)(bx*Math.sin(foodAngle)+bz*Math.cos(foodAngle));
-                n.moveTo(8+rx-base.x(),0,8+rz-base.z(),0);
-            });
-            // Rotate the actual spoon from the installed pot model, as the native bowl rotates its whisk.
-            spoonAngle += (spoonTarget-spoonAngle)*(1-(float)Math.exp(-delta*18));
-            view.node("spoon").ifPresent(n -> n.rotateTo(0, view.state().getControl("lid_open")>.5F?spoonAngle:0, 0, 0));
+            boolean poured=java.util.Arrays.stream(view.state().getItems("ingredients")).anyMatch(KitchenIngredients::liquid);
+            view.node("contents").ifPresent(n -> n.setEnabled(view.isFocused() && poured && !stirring));
             soup.frame(view, delta);
+            potMotion.frame(view, delta, stirring && view.isFocused());
         }
         book.frame(view, delta);
     }
@@ -89,6 +70,9 @@ public final class KitchenBehavior implements StationBehavior {
         } else if (event instanceof SceneEvent.Click click) {
             if (click.node().equals("book_open") && click.button() == 0) book.click(view);
             else if (click.node().equals("result") && !bowl) collect(view,click.button());
+            else if (!bowl && click.node().equals("contents") && click.button()==1 && !stirring
+                && net.minecraft.client.Minecraft.getInstance().player.inventoryMenu.getCarried().isEmpty())
+                view.sendAction("take_liquid",new CompoundTag());
         }
     }
     @Override public boolean onItemClick(StationView view, String node, net.minecraft.world.item.ItemStack stack, int button, boolean shift) {
@@ -115,7 +99,7 @@ public final class KitchenBehavior implements StationBehavior {
             var inputs = view.state().getItems("ingredients");
             for (int i = 0; i < inputs.length; i++) {
                 var stack = inputs[i];
-                view.node("ingredient_" + i).ifPresent(n -> n.setVisible(!KitchenIngredients.liquid(stack) && !KitchenIngredients.dissolved(stack)));
+                view.node("ingredient_" + i).ifPresent(n -> n.setVisible(!stack.isEmpty() && !KitchenIngredients.liquid(stack)));
             }
         }
         if (result != null) result.refresh();

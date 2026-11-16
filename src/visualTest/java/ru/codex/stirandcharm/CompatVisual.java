@@ -22,6 +22,7 @@ import org.joml.Vector3f;
 @EventBusSubscriber(modid=StirAndCharm.ID,value=Dist.CLIENT)
 public final class CompatVisual {
     private static int ticks;
+    private static Vector3f spoonBefore,foodBefore;
     private static float crankAngleBefore=Float.NaN;
     private static float layerScaleBefore=Float.NaN;
     private static final String[] BLOCKS={"farm_and_charm:cutting_board","candlelight:cooking_pan","candlelight:cooking_pot","farm_and_charm:roaster","bakery:small_cooking_pot","farm_and_charm:cooking_pot"};
@@ -36,6 +37,7 @@ public final class CompatVisual {
         if(!Boolean.getBoolean("handily.compatVisual"))return;
         var mc=Minecraft.getInstance();if(mc.level==null || mc.player==null || mc.getSingleplayerServer()==null)return;
         ticks++;
+        if(ticks==70 && Boolean.getBoolean("handily.potVisualOnly"))ticks=1194;
         if(ticks==25){
             mc.options.pauseOnLostFocus=false;mc.options.renderDistance().set(5);
             mc.getSingleplayerServer().execute(()->{
@@ -232,7 +234,76 @@ public final class CompatVisual {
             if(Math.abs(ratio-1F)>.02F)throw new IllegalStateException("Interrupted board assembly left a shrunken layer: "+ratio);
             LogUtils.getLogger().info("HANDILY_CHECK board interrupted assembly transform restored: PASS ratio={}",ratio);
         }
-        if(ticks==1194)mc.stop();
+        if(ticks==1194)com.pockyl.diegesis.impl.client.focus.FocusController.get().requestExit();
+        if(ticks==1200)mc.getSingleplayerServer().execute(()->{
+            var level=mc.getSingleplayerServer().overworld();
+            var pot=(CookingPotBlockEntity)level.getBlockEntity(POS[5]);pot.clearContent();
+            level.setBlockAndUpdate(POS[5].below(),Blocks.STONE.defaultBlockState());
+            pot.setItem(0,new ItemStack(Items.SUGAR,32));pot.setChanged();
+            var p=mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst();p.inventoryMenu.setCarried(ItemStack.EMPTY);p.connection.teleport(6.5,70,-2,0,45);
+        });
+        if(ticks==1210)open(mc,5);
+        if(ticks==1240){
+            var view=DiegesisClient.station(POS[5]).orElseThrow();var sugar=view.node("ingredient_0").orElseThrow();
+            if(!sugar.isVisible())throw new IllegalStateException("Sugar ingredient is hidden");
+            shot(mc,"062-sugar-visible");
+            var pos=sugar.sceneMatrix().transformPosition(new Vector3f(0,.25F,0));
+            var at=Projector.toScreen(view.toWorld(pos.x,pos.y,pos.z));
+            mc.screen.mouseMoved(at.x,at.y);mc.screen.mouseClicked(at.x,at.y,0);mc.screen.mouseReleased(at.x,at.y,0);
+        }
+        if(ticks==1255){
+            var view=DiegesisClient.station(POS[5]).orElseThrow();
+            if(!mc.player.inventoryMenu.getCarried().is(Items.SUGAR) || mc.player.inventoryMenu.getCarried().getCount()!=32
+                || !view.state().getItems("ingredients")[0].isEmpty())throw new IllegalStateException("Actual sugar click did not retrieve the full stack");
+            LogUtils.getLogger().info("HANDILY_CHECK visible sugar retrieved with real mouse click: PASS");
+            mc.getSingleplayerServer().execute(()->{
+                var level=mc.getSingleplayerServer().overworld();var pot=(CookingPotBlockEntity)level.getBlockEntity(POS[5]);
+                var p=mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst();
+                pot.setItem(0,p.inventoryMenu.getCarried().copy());p.inventoryMenu.setCarried(ItemStack.EMPTY);p.inventoryMenu.broadcastChanges();
+                pot.setItem(1,new ItemStack(Items.CARROT));pot.setItem(2,new ItemStack(Items.POTATO));pot.setItem(3,new ItemStack(Items.BEEF));pot.setChanged();
+            });
+        }
+        if(ticks==1270){
+            var view=DiegesisClient.station(POS[5]).orElseThrow();var spoon=view.node("spoon").orElseThrow();
+            spoonBefore=spoon.sceneMatrix().transformDirection(new Vector3f(0,1,0));
+            var pos=view.node("stir_handle").orElseThrow().sceneMatrix().transformPosition(new Vector3f(-5.5F,10.25F,1));
+            var at=Projector.toScreen(view.toWorld(pos.x,pos.y,pos.z));com.pockyl.diegesis.impl.client.focus.FocusScreen.forcedMouse=new double[]{at.x,at.y};mc.screen.mouseMoved(at.x,at.y);mc.screen.mouseClicked(at.x,at.y,0);
+        }
+        if(ticks>1270 && ticks<1350){
+            var view=DiegesisClient.station(POS[5]).orElseThrow();float angle=(ticks-1270)*.16F;
+            var at=Projector.toScreen(view.toWorld(8+(float)Math.cos(angle)*2,7.25F,8+(float)Math.sin(angle)*2));
+            com.pockyl.diegesis.impl.client.focus.FocusScreen.forcedMouse=new double[]{at.x,at.y};
+            mc.screen.mouseMoved(at.x,at.y);
+        }
+        if(ticks==1330){
+            var view=DiegesisClient.station(POS[5]).orElseThrow();
+            var now=view.node("spoon").orElseThrow().sceneMatrix().transformDirection(new Vector3f(0,1,0));
+            if(now.distance(spoonBefore)<.2F || view.state().getControl("stirring")<.5F)throw new IllegalStateException("Mouse stirring did not tilt the native spoon: "+now+" state="+view.state().getControl("stirring")+" x="+view.state().getControl("spoon_x")+" z="+view.state().getControl("spoon_z"));
+            foodBefore=view.node("ingredient_1").orElseThrow().sceneMatrix().transformPosition(new Vector3f());
+            shot(mc,"062-stirring");LogUtils.getLogger().info("HANDILY_CHECK native spoon follows mouse and tilts: PASS");
+        }
+        if(ticks==1350){mc.screen.mouseReleased(0,0,0);com.pockyl.diegesis.impl.client.focus.FocusScreen.forcedMouse=null;}
+        if(ticks==1365){
+            var view=DiegesisClient.station(POS[5]).orElseThrow();var after=view.node("ingredient_1").orElseThrow().sceneMatrix().transformPosition(new Vector3f());
+            if(after.distance(foodBefore)<.05F)throw new IllegalStateException("Ingredients did not drift with the soup");
+            for(int i=0;i<4;i++){var pos=view.node("ingredient_"+i).orElseThrow().sceneMatrix().transformPosition(new Vector3f());
+                if(Math.abs(pos.x-8)>3.1F || Math.abs(pos.z-8)>3.1F)throw new IllegalStateException("Floating ingredient left the pot: "+pos);}
+            shot(mc,"062-floating");LogUtils.getLogger().info("HANDILY_CHECK ingredients drift inside pot bounds: PASS");
+        }
+        if(ticks==1380)mc.getSingleplayerServer().execute(()->{
+            var level=mc.getSingleplayerServer().overworld();var pot=(CookingPotBlockEntity)level.getBlockEntity(POS[5]);pot.clearContent();pot.setItem(5,new ItemStack(Items.WATER_BUCKET));pot.setChanged();
+            var p=mc.getSingleplayerServer().getPlayerList().getPlayers().getFirst();p.getInventory().clearContent();p.inventoryMenu.setCarried(ItemStack.EMPTY);p.inventoryMenu.broadcastChanges();
+        });
+        if(ticks==1400){
+            var view=DiegesisClient.station(POS[5]).orElseThrow();var at=Projector.toScreen(view.toWorld(8,7.25F,8));
+            mc.screen.mouseMoved(at.x,at.y);mc.screen.mouseClicked(at.x,at.y,1);mc.screen.mouseReleased(at.x,at.y,1);
+        }
+        if(ticks==1415){
+            var view=DiegesisClient.station(POS[5]).orElseThrow();
+            if(!view.state().getItems("ingredients")[5].isEmpty() || !mc.player.getInventory().contains(new ItemStack(Items.WATER_BUCKET)))throw new IllegalStateException("Right click on soup did not recover the poured ingredient");
+            LogUtils.getLogger().info("HANDILY_CHECK poured ingredient recovered with real right click: PASS");
+        }
+        if(ticks==1420)mc.stop();
     }
     private static float scale(NodeView node){
         var matrix=node.sceneMatrix();
