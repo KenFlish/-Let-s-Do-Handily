@@ -16,7 +16,7 @@ public final class ClientSetup {
             DiegesisClient.registerBehavior(StirAndCharm.BOARD, view -> new BoardBehavior());
             for (var kind : ru.codex.stirandcharm.Appliance.values())
                 if (kind != ru.codex.stirandcharm.Appliance.MINCER)
-                DiegesisClient.registerBehavior(StirAndCharm.id(kind.block), view -> new ApplianceBehavior(kind));
+                DiegesisClient.registerBehavior(StirAndCharm.id(kind.block), view -> kind == ru.codex.stirandcharm.Appliance.STOVE ? new StoveBehavior() : new ApplianceBehavior(kind));
             DiegesisClient.registerLiquid(StirAndCharm.id("soup"), LiquidLook.of(0x8877B9D8).thick(0.3F));
             if (net.neoforged.fml.ModList.get().isLoaded("candlelight")) {
                 DiegesisClient.registerBehavior(StirAndCharm.id("candlelight_pot"), view -> new KitchenBehavior(false));

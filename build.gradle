@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
     id 'net.neoforged.moddev' version '2.0.141'
 }
-version = '0.6.4'
+version = '0.6.5'
 group = 'ru.codex.stirandcharm'
 base { archivesName = 'handily-neoforge-1.21.1' }
 java { toolchain.languageVersion = JavaLanguageVersion.of(21); withSourcesJar() }
@@ -24,6 +24,7 @@ neoForge {
             client(); gameDirectory = file(project.hasProperty('baseVisual') ? 'run-client-base' : 'run-client')
             if (project.hasProperty('backgroundClient')) systemProperty 'handily.backgroundClient', 'true'
             if (project.hasProperty('regressionVisual')) systemProperty 'handily.regressionVisual', 'true'
+            if (project.hasProperty('stoveVisual')) systemProperty 'handily.stoveVisual', 'true'
             if (project.hasProperty('boardMatrix')) systemProperty 'handily.boardMatrix', 'true'
             if (project.hasProperty('compatVisual')) systemProperty 'handily.compatVisual', 'true'
             if (project.hasProperty('potVisualOnly')) systemProperty 'handily.potVisualOnly', 'true'
@@ -59,5 +60,5 @@ dependencies {
 }
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
 tasks.named('processResources') { inputs.property('version', project.version); filesMatching('META-INF/neoforge.mods.toml') { expand(version: project.version) } }
-tasks.named('jar') { from('LICENSE'); from('LICENSE_HANDSON_DELIGHT'); from('THIRD_PARTY_NOTICES.md') }
-tasks.named('sourcesJar') { from('LICENSE'); from('LICENSE_HANDSON_DELIGHT'); from('THIRD_PARTY_NOTICES.md') }
+tasks.named('jar') { from('LICENSE'); from('LICENSE_HANDSON_DELIGHT'); from('LICENSE_HANDSON_VANILLA'); from('THIRD_PARTY_NOTICES.md') }
+tasks.named('sourcesJar') { from('LICENSE'); from('LICENSE_HANDSON_DELIGHT'); from('LICENSE_HANDSON_VANILLA'); from('THIRD_PARTY_NOTICES.md') }

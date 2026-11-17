@@ -56,6 +56,9 @@ def modernize_scene(path, scene):
         return result
     scene['nodes'] = clean(scene['nodes'])
     if kind == 'stove':
+        from stove_scene import stove_scene
+        scene.clear()
+        scene.update(stove_scene())
         return
     try:
         find_node(scene, 'result')['pickable'] = False

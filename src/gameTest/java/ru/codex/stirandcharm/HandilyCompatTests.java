@@ -40,6 +40,27 @@ public final class HandilyCompatTests {
         return new Context(h.getLevel(),h.absolutePos(pos),type,new StationState(type.schema()));
     }
     private static CompoundTag fill(RecipeHolder<?> h) {var t=new CompoundTag();t.putString("recipe",h.id().toString());return t;}
+    @GameTest(template="empty") public static void stoveCollectionIsAtomicAndPreservesComponents(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:stove","stove");var logic=new ApplianceLogic(c,Appliance.STOVE);
+        var stove=(StoveBlockEntity)c.blockEntity();var p=h.makeMockPlayer(GameType.SURVIVAL);
+        var meal=new ItemStack(Items.BREAD,3);meal.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,net.minecraft.network.chat.Component.literal("Native stove meal"));stove.setItem(0,meal.copy());
+        for(int i=0;i<36;i++)p.getInventory().setItem(i,new ItemStack(Items.COBBLESTONE,64));
+        var all=new CompoundTag();all.putBoolean("all",true);logic.onCustomAction(c,p,"collect",all);
+        h.assertTrue(stove.getItem(0).getCount()==3,"A full inventory leaves every portion in the stove");
+        p.getInventory().setItem(0,ItemStack.EMPTY);logic.onCustomAction(c,p,"collect",new CompoundTag());
+        h.assertTrue(stove.getItem(0).getCount()==2 && ItemStack.isSameItemSameComponents(p.getInventory().getItem(0),meal),"Single serving keeps native components and removes one portion");
+        logic.onCustomAction(c,p,"collect",all);logic.onCustomAction(c,p,"collect",all);
+        h.assertTrue(stove.getItem(0).isEmpty() && p.getInventory().getItem(0).getCount()==3,"Repeated collection cannot duplicate output");h.succeed();
+    }
+    @GameTest(template="empty") public static void stoveIgnitionConsumesOnlySuccessfulNativeUse(GameTestHelper h){
+        var c=setup(h,"farm_and_charm:stove","stove");var logic=new ApplianceLogic(c,Appliance.STOVE);var stove=(StoveBlockEntity)c.blockEntity();var p=h.makeMockPlayer(GameType.SURVIVAL);
+        stove.setItem(4,new ItemStack(Items.COAL,3));logic.onCustomAction(c,p,"ignite",new CompoundTag());
+        h.assertTrue(!stove.isLit() && stove.getItem(4).getCount()==3,"A forged ignition action without a tool cannot burn fuel");
+        p.inventoryMenu.setCarried(new ItemStack(Items.FIRE_CHARGE,2));logic.onCustomAction(c,p,"ignite",new CompoundTag());
+        h.assertTrue(stove.isLit() && stove.getItem(4).getCount()==2 && p.inventoryMenu.getCarried().getCount()==1,"Ignition consumes native fuel and one fire charge");
+        logic.onCustomAction(c,p,"ignite",new CompoundTag());
+        h.assertTrue(p.inventoryMenu.getCarried().getCount()==1,"An already lit stove cannot consume another ignition item");h.succeed();
+    }
     @GameTest(template="empty") public static void cookbookTabAndStaleSelectionCannotTurnCuttingIntoAssembly(GameTestHelper h){
         var c=setup(h,"farm_and_charm:cutting_board","cutting_board");var logic=new BoardLogic(c);
         var board=(CuttingBoardBlockEntity)c.blockEntity();var p=h.makeMockPlayer(GameType.SURVIVAL);

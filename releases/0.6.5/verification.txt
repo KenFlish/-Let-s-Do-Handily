@@ -1,0 +1,149 @@
+
+C:\Users\vic\Documents\codex\output\handily-0.6.1-release>if "Windows_NT" == "Windows_NT" setlocal
+
+C:\Users\vic\Documents\codex\output\handily-0.6.1-release>set DIRNAME=C:\Users\vic\Documents\codex\handily\.gradle-home\wrapper\dists\gradle-9.2.1-bin\2t0n5ozlw9xmuyvbp7dnzaxug\gradle-9.2.1\bin\ 
+
+C:\Users\vic\Documents\codex\output\handily-0.6.1-release>if "C:\Users\vic\Documents\codex\handily\.gradle-home\wrapper\dists\gradle-9.2.1-bin\2t0n5ozlw9xmuyvbp7dnzaxug\gradle-9.2.1\bin\" == "" set DIRNAME=. 
+
+C:\Users\vic\Documents\codex\output\handily-0.6.1-release>set APP_BASE_NAME=gradle 
+
+C:\Users\vic\Documents\codex\output\handily-0.6.1-release>set APP_HOME=C:\Users\vic\Documents\codex\handily\.gradle-home\wrapper\dists\gradle-9.2.1-bin\2t0n5ozlw9xmuyvbp7dnzaxug\gradle-9.2.1\bin\.. 
+
+C:\Users\vic\Documents\codex\output\handily-0.6.1-release>for %i in ("C:\Users\vic\Documents\codex\handily\.gradle-home\wrapper\dists\gradle-9.2.1-bin\2t0n5ozlw9xmuyvbp7dnzaxug\gradle-9.2.1\bin\..") do set APP_HOME=%~fi 
+
+C:\Users\vic\Documents\codex\output\handily-0.6.1-release>set APP_HOME=C:\Users\vic\Documents\codex\handily\.gradle-home\wrapper\dists\gradle-9.2.1-bin\2t0n5ozlw9xmuyvbp7dnzaxug\gradle-9.2.1 
+
+C:\Users\vic\Documents\codex\output\handily-0.6.1-release>set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m" "-javaagent:C:\Users\vic\Documents\codex\handily\.gradle-home\wrapper\dists\gradle-9.2.1-bin\2t0n5ozlw9xmuyvbp7dnzaxug\gradle-9.2.1/lib/agents/gradle-instrumentation-agent-9.2.1.jar" 
+
+C:\Users\vic\Documents\codex\output\handily-0.6.1-release>if defined JAVA_HOME goto findJavaFromJavaHome 
+
+C:\Users\vic\Documents\codex\output\handily-0.6.1-release>set JAVA_HOME=C:\Program Files\Java\jdk-21 
+
+C:\Users\vic\Documents\codex\output\handily-0.6.1-release>set JAVA_EXE=C:\Program Files\Java\jdk-21/bin/java.exe 
+
+C:\Users\vic\Documents\codex\output\handily-0.6.1-release>if exist "C:\Program Files\Java\jdk-21/bin/java.exe" goto execute 
+
+C:\Users\vic\Documents\codex\output\handily-0.6.1-release>"C:\Program Files\Java\jdk-21/bin/java.exe" "-Xmx64m" "-Xms64m" "-javaagent:C:\Users\vic\Documents\codex\handily\.gradle-home\wrapper\dists\gradle-9.2.1-bin\2t0n5ozlw9xmuyvbp7dnzaxug\gradle-9.2.1/lib/agents/gradle-instrumentation-agent-9.2.1.jar"   "-Dorg.gradle.appname=gradle" -jar "C:\Users\vic\Documents\codex\handily\.gradle-home\wrapper\dists\gradle-9.2.1-bin\2t0n5ozlw9xmuyvbp7dnzaxug\gradle-9.2.1\lib\gradle-gradle-cli-main-9.2.1.jar" build runGameTestServer -PgameTests -Pcompat -PnewDiegesis --offline --console=plain --no-watch-fs --no-problems-report 
+> Task :createMinecraftArtifacts UP-TO-DATE
+> Task :compileJava
+> Task :processResources
+> Task :classes
+> Task :jarJar NO-SOURCE
+> Task :jar
+> Task :sourcesJar
+> Task :assemble
+> Task :compileTestJava NO-SOURCE
+> Task :processTestResources NO-SOURCE
+> Task :testClasses UP-TO-DATE
+> Task :test NO-SOURCE
+> Task :check UP-TO-DATE
+> Task :build
+
+> Task :compileGameTestJava
+gradle.bat : Note: C:\Users\vic\Documents\codex\output\handily-0.6.1-release\src\gameTest\java\ru\codex\stirandcharm\Ha
+ndilyCompatTests.java uses unchecked or unsafe operations.
+строка:12 знак:1
++ & 'C:\Users\vic\Documents\codex\handily\.gradle-home\wrapper\dists\gr ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Note: C:\Users\...afe operations.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Note: Recompile with -Xlint:unchecked for details.
+
+> Task :processGameTestResources UP-TO-DATE
+> Task :gameTestClasses
+> Task :downloadAssets UP-TO-DATE
+> Task :writeGameTestServerLegacyClasspath UP-TO-DATE
+> Task :prepareGameTestServerRun UP-TO-DATE
+
+> Task :runGameTestServer
+WARN StatusConsoleListener Advanced terminal features are not available in this environment
+[13:56:58] [main/INFO] [cp.mo.mo.Launcher/MODLAUNCHER]: ModLauncher running: args [--launchTarget, forgeserverdev, --gameDir, ., --fml.fmlVersion, 4.0.45, --fml.mcVersion, 1.21.1, --fml.neoForgeVersion, 21.1.265, --fml.neoFormVersion, 20240808.144430]
+[13:56:58] [main/INFO] [cp.mo.mo.Launcher/MODLAUNCHER]: JVM identified as Oracle Corporation Java HotSpot(TM) 64-Bit Server VM 21.0.7+8-LTS-245
+[13:56:58] [main/INFO] [cp.mo.mo.Launcher/MODLAUNCHER]: ModLauncher 11.0.5+main.901c6ea8 starting: java version 21.0.7 by Oracle Corporation; OS Windows 10 arch amd64 version 10.0
+[13:56:58] [main/INFO] [ne.ne.fm.lo.ImmediateWindowHandler/]: ImmediateWindowProvider not loading because launch target is forgeserverdev
+[13:56:58] [main/INFO] [mixin/]: SpongePowered MIXIN Subsystem Version=0.8.7 Source=union:/C:/Users/vic/Documents/codex/handily/.gradle-home/caches/modules-2/files-2.1/net.fabricmc/sponge-mixin/0.16.4+mixin.0.8.7/26d01f0567ab46e9ca0d2ed89d0ecc11aadbd433/sponge-mixin-0.16.4+mixin.0.8.7.jar%2394!/ Service=ModLauncher Env=SERVER
+[13:56:59] [main/INFO] [ne.ne.fm.lo.mo.lo.JarInJarDependencyLocator/]: Found 3 dependencies adding them to mods collection
+[13:56:59] [main/INFO] [ne.ne.fm.lo.mo.ModDiscoverer/]: 
+     Mod List:
+		Name Version (Mod Id)
+
+		[Let's Do] Bakery 2.1.11 (bakery)
+		[Let's Do] Candlelight 2.1.15 (candlelight)
+		[Let's Do] Farm & Charm 1.1.29 (farm_and_charm)
+		[Let's Do] Foundation 1.0.7 (foundation)
+		[Let's Do] Handily 0.6.5 (handson_farm_charm)
+		[Let's Do] HerbalBrews 1.1.4 (herbalbrews)
+		Architectury 13.0.11 (architectury)
+		Diegesis 1.0.0-beta.11 (diegesis)
+		Farmer's Delight 1.3.4 (farmersdelight)
+		Hands-On Delight 1.4.0 (handson_delight)
+		Minecraft 1.21.1 (minecraft)
+		NeoForge 21.1.265 (neoforge)
+[13:57:02] [main/INFO] [mixin/]: Compatibility level set to JAVA_21
+[13:57:02] [main/INFO] [cp.mo.mo.LaunchServiceHandler/MODLAUNCHER]: Launching target 'forgeserverdev' with arguments [--gameDir, .]
+[13:57:04] [main/WARN] [os.ut.pl.wi.WmiQueryHandler/]: COM exception querying Win32_Processor, which might not be on your system. Will not attempt to query it again. Error was -2147217405: (HRESULT: 80041003)
+[13:57:04] [main/WARN] [os.ut.pl.wi.WmiQueryHandler/]: COM exception querying Win32_Processor, which might not be on your system. Will not attempt to query it again. Error was -2147217405: (HRESULT: 80041003)
+[13:57:04] [main/WARN] [os.ut.pl.wi.WmiQueryHandler/]: COM exception querying Win32_PhysicalMemory, which might not be on your system. Will not attempt to query it again. Error was -2147217405: (HRESULT: 80041003)
+[13:57:05] [main/INFO] [MixinExtras|Service/]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.5).
+[13:57:19] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, location] and [teleport, destination] with inputs: [0.1 -0.5 .9, 0 0 0]
+[13:57:19] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, location] and [teleport, targets] with inputs: [0.1 -0.5 .9, 0 0 0]
+[13:57:19] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, destination] and [teleport, targets] with inputs: [Player, 0123, @e, dd12be42-52a9-4a91-a8a1-11c01849e498]
+[13:57:19] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, targets] and [teleport, destination] with inputs: [Player, 0123, dd12be42-52a9-4a91-a8a1-11c01849e498]
+[13:57:19] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, targets, location] and [teleport, targets, destination] with inputs: [0.1 -0.5 .9, 0 0 0]
+[13:57:20] [modloading-worker-0/INFO] [ne.ne.ne.co.NeoForgeMod/NEOFORGE-MOD]: NeoForge mod loading, version 21.1.265, for MC 1.21.1
+[13:57:40] [main/INFO] [mojang/YggdrasilAuthenticationService]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]
+[13:57:40] [main/WARN] [ne.ne.ne.co.CommonHooks/WP]: The following mods have version differences that were not resolved:
+handson_farm_charm (version 0.6.4 -> 0.6.5)
+Things may not work well.
+[13:57:40] [main/WARN] [minecraft/VanillaPackResourcesBuilder]: Assets URL 'union:/C:/Users/vic/Documents/codex/output/handily-0.6.1-release/build/moddev/artifacts/neoforge-21.1.265.jar%23125!/assets/.mcassetsroot' uses unexpected schema
+[13:57:40] [main/WARN] [minecraft/VanillaPackResourcesBuilder]: Assets URL 'union:/C:/Users/vic/Documents/codex/output/handily-0.6.1-release/build/moddev/artifacts/neoforge-21.1.265.jar%23125!/data/.mcassetsroot' uses unexpected schema
+[13:57:40] [main/INFO] [ne.ne.ne.ga.GameTestHooks/]: Enabled Gametest Namespaces: [handson_farm_charm]
+[13:57:45] [main/INFO] [minecraft/RecipeManager]: Loaded 2092 recipes
+[13:57:45] [main/INFO] [co.po.ha.HandsOnDelight/]: 101 crafting recipes of Farmer's Delight may be put together on the cutting board
+[13:57:45] [main/INFO] [minecraft/AdvancementTree]: Loaded 1908 advancements
+[13:57:56] [Server thread/INFO] [minecraft/MinecraftServer]: Preparing start region for dimension minecraft:overworld
+[13:57:56] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 2%
+[13:57:56] [Server thread/INFO] [minecraft/LoggerChunkProgressListener]: Time elapsed: 488 ms
+[13:57:57] [Server thread/INFO] [minecraft/GameTestServer]: Started game test server
+[13:57:57] [Server thread/INFO] [ne.ne.ne.se.pe.PermissionAPI/]: Successfully initialized permission handler neoforge:default_handler
+[13:57:57] [Server thread/WARN] [ne.ne.ne.co.TagConventionLogWarning/]: 
+   Dev warning - Legacy Tags detected. Please migrate your 'forge' namespace tags to the 'c' namespace! See net.neoforged.neoforge.common.Tags.java for all tags.
+   NOTE: Many tags have been moved around or renamed. Some new ones were added so please review the new tags.
+    And make sure you follow tag conventions for new tags! The convention is `c` with nouns generally being plural and adjectives being singular.
+   You can disable this message in NeoForge's common config by setting `logLegacyTagWarnings` to "SILENCED" or see individual tags with "DEV_VERBOSE".
+
+[13:57:57] [Server thread/INFO] [minecraft/GameTestServer]: 45 tests are now running at position -5150110, -59, -11395167!
+[13:57:59] [Server thread/INFO] [minecraft/GameTestRunner]: Running test batch 'defaultBatch:0' (45 tests)...
+[13:57:59] [Server thread/INFO] [minecraft/GameTestServer]: [                                             ]
+[13:57:59] [Server thread/INFO] [minecraft/GameTestServer]: [                  ++_+_   +++++              ]
+[13:58:00] [Server thread/INFO] [minecraft/GameTestServer]: [++++++++++++++++_+++_++++++++++_+_++++++++_++]
+[13:58:00] [Server thread/INFO] [minecraft/GameTestServer]: [++++++++++++++++++++_++++++++++++++++++++++++]
+[13:58:00] [Server thread/INFO] [minecraft/GameTestServer]: [+++++++++++++++++++++++++++++++++++++++++++++]
+[13:58:00] [Server thread/INFO] [minecraft/GameTestServer]: ========= 45 GAME TESTS COMPLETE IN 3.114 s ======================
+[13:58:00] [Server thread/INFO] [minecraft/GameTestServer]: All 45 required tests passed :)
+[13:58:00] [Server thread/INFO] [minecraft/GameTestServer]: ====================================================
+[13:58:00] [Server thread/INFO] [minecraft/MinecraftServer]: Stopping server
+[13:58:00] [Server thread/INFO] [minecraft/MinecraftServer]: Saving players
+[13:58:00] [Server thread/INFO] [minecraft/MinecraftServer]: Saving worlds
+[13:58:01] [Server thread/INFO] [minecraft/MinecraftServer]: Saving chunks for level 'ServerLevel[Test Level]'/minecraft:overworld
+[13:58:01] [Server thread/INFO] [minecraft/MinecraftServer]: Saving chunks for level 'ServerLevel[Test Level]'/minecraft:the_end
+[13:58:01] [Server thread/INFO] [minecraft/MinecraftServer]: Saving chunks for level 'ServerLevel[Test Level]'/minecraft:the_nether
+[13:58:01] [Server thread/INFO] [minecraft/MinecraftServer]: ThreadedAnvilChunkStorage (world): All chunks are saved
+[13:58:01] [Server thread/INFO] [minecraft/MinecraftServer]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[13:58:01] [Server thread/INFO] [minecraft/MinecraftServer]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[13:58:01] [Server thread/INFO] [minecraft/MinecraftServer]: ThreadedAnvilChunkStorage: All dimensions are saved
+[13:58:01] [Server thread/INFO] [minecraft/GameTestServer]: Game test server shutting down
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.2.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 1m 18s
+11 actionable tasks: 6 executed, 5 up-to-date
+
+C:\Users\vic\Documents\codex\output\handily-0.6.1-release>if 0 EQU 0 goto mainEnd 
+
+C:\Users\vic\Documents\codex\output\handily-0.6.1-release>if "Windows_NT" == "Windows_NT" endlocal

@@ -24,6 +24,7 @@
   "client": [
     "SpriteImageAccess",
     "BoardSceneRenderer",
+    "StoveSceneRenderer",
     "CameraSideMixin",
     "CarriedFacingMixin",
     "CarriedScaleMixin",

@@ -1,4 +1,13 @@
-# [Let's Do] Handily 0.6.4
+# [Let's Do] Handily 0.6.5
+
+- Reworked the Farm & Charm stove scene: its own upper shutter and lower firebox door open smoothly, with native food on the grate, fuel below and a thin cooking progress strip.
+- Uses only the installed Farm & Charm stove model and textures. No Hands-On Vanilla model or texture assets are included; its door easing and progress design are adapted under MIT.
+- Removed the floating stove output and flint-and-steel button. Use flint and steel or a fire charge on the firebox; successful ignition consumes the native fuel and the ignition tool's durability or charge.
+- Click cooked food for one portion, Shift for the stack, into inventory after the pickup presentation. Full inventories leave output intact. Native cooking time, recipes, item components, experience and automation remain unchanged.
+- Includes the cutting selection, dish/progress preview, hint removal, inventory animation order and Diegesis beta.11 fixes from 0.6.4. Mincer and kettle scenes remain disabled.
+- Verification is limited to one dedicated-server GameTest run and the build; the final native stove scene has not been visually checked in Minecraft. On Diegesis beta.8 the scene closes immediately; beta.11 supplies the smooth closing-scene hook.
+
+## 0.6.4
 
 - Cuttable first ingredients always start cutting, as in Hands-On Delight. A matching second ingredient starts assembly; cookbook tabs only filter recipes. Stale dish selections no longer override cutting.
 - Restored a non-clickable dish preview and progress badge beside stations, including board assembly.

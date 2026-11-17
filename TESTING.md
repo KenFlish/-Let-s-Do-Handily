@@ -1,3 +1,21 @@
+# Handily 0.6.5 verification
+
+Scope requested by the user: one server test run, then upload. Build succeeded; all 45 required GameTests passed in 3.114 seconds. Full run: verification-065-final.log (included as verification.txt in the release). The final native stove visual has not been launched in a client. The earlier client launch was interrupted before completion and used the abandoned reference-texture prototype; it is not counted as validation of this version.
+
+The run uses Java 21, Minecraft 1.21.1, NeoForge 21.1.265, Diegesis beta.11 and the optional compatibility set. It includes two new stove regressions: output collection with a full inventory, native item components and repeated requests; ignition without a tool and correct fire-charge/fuel consumption. Existing native stove cooking-time and inventory checks remain in the suite.
+
+The body, two doors, inner grate and fire are selected from the installed Farm & Charm baked model; no third-party model or texture is packaged. The top grill renderer remains native; only duplicate chamber inputs and output are suppressed during the scene. Model/resource-pack appearance, hit targets, four-facing visual alignment and closing motion still require an in-game visual check. Smooth closing uses Diegesis beta.11's holdsBlock hook; beta.8 falls back to its native immediate scene closure. beta.8 was not rerun for 0.6.5.
+
+Build/test command:
+
+```text
+gradlew.bat build runGameTestServer -PgameTests -Pcompat -PnewDiegesis --offline
+```
+
+The following is the historical 0.6.4 report, not a second 0.6.5 test run.
+
+---
+
 # Handily 0.6.4 release verification
 
 Minecraft 1.21.1, NeoForge 21.1.265, Java 21.0.7 on Windows. Farm & Charm 1.1.29 and Architectury 13.0.11. Tested Diegesis builds: beta.8 and beta.11.

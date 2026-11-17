@@ -2,9 +2,9 @@
 
 Cook Farm & Charm dishes directly in the world, using Diegesis. Inspired by Hands-On Delight. Work in progress.
 
-Handily 0.6.4 fixes cutting being mistaken for assembly, restores dish/progress badges, and shows the scene motion before a received item appears in inventory. Diegesis beta.8 and beta.11 are supported.
+Handily 0.6.5 adds an animated stove using Farm & Charm's own model and textures. Food sits on the grate and fuel in the firebox. Includes the cutting, progress preview and inventory animation fixes from 0.6.4. This stove update is a preview: one server test run, no final client visual check. Use Diegesis beta.11 for smooth door closing; beta.8 closes the scene immediately.
 
-[Скачать JAR](releases/0.6.4/handily-neoforge-1.21.1-0.6.4.jar) · [Исходники и архив проекта](releases/0.6.4/)
+[Скачать JAR](releases/0.6.5/handily-neoforge-1.21.1-0.6.5.jar) · [Исходники и архив проекта](releases/0.6.5/)
 
 ## Установка
 
@@ -57,6 +57,6 @@ gradlew.bat build
 
 На Linux/macOS: `./gradlew build`. Зависимости загружаются по URL и SHA-256 из `dependencies.lock.json`. Bakery скачивается для компиляции интеграции; без `-Pcompat` он не попадает в тестовый runtime и не нужен игроку. Все runtime-зависимости остаются отдельными модами.
 
-JAR находится в `build/libs/`. `python tools/generate_assets.py` пересоздаёт сцены и переводы. `python tools/write_release_docs.py` упаковывает JAR, исходники и инструкцию в `dist/Handily-0.6.4/`.
+JAR находится в `build/libs/`. `python tools/generate_assets.py` пересоздаёт сцены и переводы. `python tools/write_release_docs.py` упаковывает JAR, исходники и инструкцию в `dist/Handily-0.6.5/`.
 
 Проверки и их ограничения: [TESTING.md](TESTING.md). Лицензия — [MIT](LICENSE); авторство заимствованных частей: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Ресурсы Minecraft, Farm & Charm, Candlelight и Bakery читаются из установленных модов; их текстуры и модели в JAR не копируются.

@@ -65,11 +65,32 @@ public final class ApplianceLogic implements StationLogic {
             // native tick decides whether a recipe can consume input. Keep the validated turn.
             mincer.crank();
         } else if (kind == Appliance.STOVE && action.equals("ignite")) {
-            var stove=(StoveBlockEntity)container;boolean was=stove.isLit();stove.ignite();
-            if(!was && stove.isLit())ctx.level().playSound(null,ctx.pos(),net.minecraft.sounds.SoundEvents.FLINTANDSTEEL_USE,net.minecraft.sounds.SoundSource.BLOCKS,1,1);
+            var tool=player.inventoryMenu.getCarried();
+            if(!(tool.getItem() instanceof net.minecraft.world.item.FlintAndSteelItem) && !(tool.getItem() instanceof net.minecraft.world.item.FireChargeItem))return;
+            var stove=(StoveBlockEntity)container;
+            if(stove.ignite()){
+                if(!player.isCreative()){
+                    if(tool.getItem() instanceof net.minecraft.world.item.FireChargeItem)tool.shrink(1);
+                    else tool.hurtAndBreak(1,(ServerLevel)ctx.level(),player,item->{});
+                    player.inventoryMenu.broadcastChanges();
+                }
+                ctx.level().playSound(null,ctx.pos(),net.minecraft.sounds.SoundEvents.FLINTANDSTEEL_USE,net.minecraft.sounds.SoundSource.BLOCKS,1,1);
+            }
         } else if (kind == Appliance.STOVE && action.equals("extinguish")) {
             var stove=(StoveBlockEntity)container;boolean was=stove.isLit();stove.extinguish();
             if(was)ctx.level().playSound(null,ctx.pos(),net.minecraft.sounds.SoundEvents.FIRE_EXTINGUISH,net.minecraft.sounds.SoundSource.BLOCKS,.7F,1);
+        } else if (kind == Appliance.STOVE && action.equals("collect")) {
+            // Preflight the entire requested portion before removing native output or awarding experience.
+            var output=container.getItem(kind.output);
+            if(output.isEmpty() || !player.inventoryMenu.getCarried().isEmpty())return;
+            var taken=output.copyWithCount(data.getBoolean("all")?output.getCount():1);
+            if(!InventoryDelivery.fits(player,List.of(taken)))return;
+            DeliveryPresentation.before(ctx,player,List.of(taken),.32F);
+            var receipt=new CompoundTag();receipt.putUUID("player",player.getUUID());receipt.put("item",taken.save(ctx.level().registryAccess()));
+            ctx.effect(StirAndCharm.id("stove_taken"),"arrival",receipt);
+            container.removeItem(kind.output,taken.getCount());container.setChanged();
+            InventoryDelivery.give(player,List.of(taken));
+            if(ctx.level() instanceof ServerLevel level)((StoveBlockEntity)container).dropExperience(level,Vec3.atCenterOf(ctx.pos()));
         } else if (kind == Appliance.ROASTER && action.equals("lid")) {
             var state = ctx.blockState();
             if (!state.hasProperty(RoasterLid.OPEN)) return;

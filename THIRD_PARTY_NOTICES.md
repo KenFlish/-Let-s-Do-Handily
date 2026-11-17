@@ -1,5 +1,7 @@
 # Credits
 
+Version 0.6.5 adapts the 0.35-second smooth furnace-door motion, grate progress strip and placement design from Hands-On Vanilla by Pocky (https://github.com/Pocky-l/handson-vanilla), commit `f509b076c28cb4d2185aacfd1971820481316da5`, under MIT. Copyright (c) 2026 Pocky. The complete license is included as `LICENSE_HANDSON_VANILLA`. No Hands-On Vanilla textures or models are bundled. The installed Farm & Charm model supplies the body, two door faces, interior, grate and fire through runtime quad selection; its native inventories and cooking remain in use. Hands-On Vanilla is not a runtime dependency.
+
 Version 0.6.3 ports `KitchenMotions.java` (Pour, Shake, Crack and Dip) from Hands-On Delight by Pocky, commit `292fb1920eed9797551dade9027ebd97f70b65f7`, under MIT. Copyright (c) 2026 Pocky. Adaptations use installed Let's Do item visuals, vanilla/library particles and sounds, and server-acknowledged native inventory changes. `PotArrivals` applies that revision's arrival arc, stagger and take-back preview design. Board knife down/up timing and piece separation also follow that revision. No quality bonuses or extra servings are included. The complete license is in `LICENSE_HANDSON_DELIGHT`.
 
 Handily is an independent addon for Farm & Charm, inspired by the in-world cooking interactions of Hands-On Delight by Pocky (https://github.com/Pocky-l/handson-delight).

@@ -94,7 +94,7 @@ public final class StirAndCharm {
             .openWhen((player, pos, state) -> !player.isSecondaryUseActive() && kind.enabled()
                 && (!block.startsWith("candlelight:") || Settings.CANDLELIGHT.get()) && !MealServing.servingInHand(player, pos))
             .logic(ctx -> new ApplianceLogic(ctx, kind));
-        if (kind == Appliance.ROASTER && !block.startsWith("candlelight:")) type.hidesBlock();
+        if (kind == Appliance.STOVE || kind == Appliance.ROASTER && !block.startsWith("candlelight:")) type.hidesBlock();
         return type.build();
     }
 }
